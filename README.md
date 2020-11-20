@@ -45,10 +45,8 @@ directory and run the `create_test_media.sh` script.
 
 
 ### Implementation of 64-bit Wave Files
-  - [ITU-R 2088][itu2088] (October 2019), "Long-form file format for the international exchange of audio 
-    programme materials with metadata"
+  - [ITU-R 2088][itu2088] (October 2019), "Long-form file format for the international exchange of audio programme materials with metadata"
     - Presently in force, adopted by the EBU in [EBU Tech 3306v2][ebu3306v2] (June 2018).
-  
   - [EBU Tech 3306v1][ebu3306v1] (July 2009), "MBWF / RF64: An extended File Format for Audio"
     - No longer in force, however long-established. 
 
