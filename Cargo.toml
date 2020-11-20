@@ -8,6 +8,8 @@ license-file = "LICENSE"
 description = "Rust Wave File Reader/Writer with Broadcast-WAV, MBWF and RF64 Support"
 homepage = "https://github.com/iluvcapra/bwavfile"
 readme = "README.md"
+categories = ["multimedia::audio", "parsing"]
+keywords = ["audio", "broadcast", "multimedia","filmmaking","ebu","itu","smpte"]
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
