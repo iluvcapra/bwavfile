@@ -1,3 +1,7 @@
+![Crates.io](https://img.shields.io/crates/l/bwavfile)
+![Crates.io](https://img.shields.io/crates/v/bwavfile)
+![GitHub last commit](https://img.shields.io/github/last-commit/iluvcapra/bwavfile)
+
 # bwavfile
 Rust Wave File Reader/Writer with Broadcast-WAV, MBWF and RF64 Support
 
