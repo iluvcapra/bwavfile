@@ -33,9 +33,9 @@ while( frame_reader.read_integer_frame(&mut buffer) > 0) {
 ## Note on Testing
 
 All of the media for the integration tests is committed to the respository
-in either zipped form or is created by ffmpeg. Before you can run tests,
-you need to `cd` into the `tests` directory and run the `create_test_media.sh`
-script.
+in either zipped form or is created by ffmpeg. Before you can run tests, you
+will need to have ffmpeg installed, and you need to `cd` into the `tests` 
+directory and run the `create_test_media.sh` script.
 
 ## Resources
 
