@@ -1,7 +1,7 @@
-extern crate wavfile;
+extern crate bwavfile;
 
-use wavfile::WaveReader;
-use wavfile::Error;
+use bwavfile::WaveReader;
+use bwavfile::Error;
 
 #[test]
 fn test_open() {
