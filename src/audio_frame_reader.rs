@@ -34,7 +34,7 @@ impl<R: Read + Seek> AudioFrameReader<R> {
         vec![0i32; self.format.channel_count as usize]
     }
 
-    pub fn read_integer_frame(&mut self, buffer:&mut [i32]) -> Result<(),Error> {
+    pub fn read_integer_frame(&mut self, buffer:&mut [i32]) -> Result<u64,Error> {
         assert!(buffer.len() as u16 == self.format.channel_count, 
             "read_integer_frame was called with a mis-sized buffer, expected {}, was {}", 
             self.format.channel_count, buffer.len());
@@ -52,7 +52,7 @@ impl<R: Read + Seek> AudioFrameReader<R> {
             }
         }
 
-        Ok( () )
+        Ok( 1 )
     }
 }
 

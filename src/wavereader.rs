@@ -9,14 +9,30 @@ use super::chunks::{WaveFmt, Bext};
 use super::audio_frame_reader::AudioFrameReader;
 use super::chunks::ReadBWaveChunks;
 //use super::validation;
-use std::io::SeekFrom::{Start};
+//use std::io::SeekFrom::{Start};
 use std::io::{Read, Seek};
 
 
 /**
  * Wave, Broadcast-WAV and RF64/BW64 parser/reader.
  * 
-
+ * ```
+ * use bwavfile::WaveReader;
+ * let mut r = WaveReader::open("tests/media/ff_silence.wav").unwrap();
+ * 
+ * let format = r.format().unwrap();
+ * assert_eq!(format.sample_rate, 44100);
+ * assert_eq!(format.channel_count, 1);
+ * 
+ * let mut frame_reader = r.audio_frame_reader().unwrap();
+ * let mut buffer = frame_reader.create_frame_buffer();
+ * 
+ * let read = frame_reader.read_integer_frame(&mut buffer).unwrap();
+ * 
+ * assert_eq!(buffer, [0i32]);
+ * assert_eq!(read, 1);
+ * 
+ * ```
 */
 #[derive(Debug)]
 pub struct WaveReader<R: Read + Seek> {
@@ -28,6 +44,7 @@ impl WaveReader<File> {
      * Open a file for reading.
      * 
      * A convenience that opens `path` and calls `Self::new()`
+     *   
      */
     pub fn open(path: &str) -> Result<Self, ParserError> {
         let inner = File::open(path)?;
@@ -48,6 +65,26 @@ impl<R: Read + Seek> WaveReader<R> {
      * will return an `Err(errors::Error)` immediately if there is a structural 
      * inconsistency that makes the stream unreadable or if it's missing 
      * essential components that make interpreting the audio data impoossible.
+     * 
+     * ```rust
+     * use std::fs::File;
+     * use std::io::{Error,ErrorKind};
+     * use bwavfile::{WaveReader, Error as WavError};
+     * 
+     * let f = File::open("tests/media/error.wav").unwrap();
+     * 
+     * let reader = WaveReader::new(f);
+     * 
+     * match reader {
+     *      Ok(_) => panic!("error.wav should not be openable"),
+     *      Err( WavError::IOError( e ) ) => {
+     *          assert_eq!(e.kind(), ErrorKind::UnexpectedEof)
+     *      }
+     *      Err(e) => panic!("Unexpected error was returned {:?}", e)
+     * }
+     * 
+     * ```
+     * 
     */
     pub fn new(inner: R) -> Result<Self,ParserError> {
         let mut retval = Self { inner };
@@ -56,7 +93,7 @@ impl<R: Read + Seek> WaveReader<R> {
     }
 
     /**
-     * Unwrap and reliqnish ownership of the inner reader.
+     * Unwrap the inner reader.
      */
     pub fn into_inner(self) -> R {
         return self.inner;

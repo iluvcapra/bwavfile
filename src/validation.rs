@@ -1,10 +1,9 @@
 use super::parser::{Parser};
 use super::fourcc::{FourCC, FMT__SIG,DATA_SIG, BEXT_SIG, JUNK_SIG, FLLR_SIG};
 use super::errors::Error as ParserError;
-use super::wavereader::WaveReader;
+use super::wavereader::{WaveReader};
 
 use std::io::{Read,Seek};
-
 
 impl<R:Read + Seek> WaveReader<R> {
     /**
@@ -34,6 +33,20 @@ impl<R:Read + Seek> WaveReader<R> {
      * 
      * Some clients require a WAVE file to only contain format and data without any other
      * metadata and this function is provided to validate this condition.
+     * 
+     * ```
+     * # use bwavfile::WaveReader;
+     * 
+     * let mut w = WaveReader::open("tests/media/ff_minimal.wav").unwrap();
+     * w.validate_minimal().expect("Minimal wav did not validate not minimal!");
+     * ```
+     * 
+     * ```
+     * # use bwavfile::WaveReader;
+     * 
+     * let mut x = WaveReader::open("tests/media/pt_24bit_51.wav").unwrap();
+     * x.validate_minimal().expect_err("Complex WAV validated minimal!");
+     * ```
     */
     pub fn validate_minimal(&mut self) -> Result<(), ParserError>  {
         self.validate_readable()?;
@@ -53,6 +66,19 @@ impl<R:Read + Seek> WaveReader<R> {
      * 
      * Returns without `Err` if `validate_readable()` and file contains a 
      * Broadcast-WAV metadata record (a `bext` chunk).
+     * 
+     * ```
+     * # use bwavfile::WaveReader;
+     * 
+     * let mut w = WaveReader::open("tests/media/ff_bwav_stereo.wav").unwrap();
+     * w.validate_broadcast_wave().expect("BWAVE file did not validate BWAVE");
+     * 
+     * let mut x = WaveReader::open("tests/media/pt_24bit.wav").unwrap();
+     * x.validate_broadcast_wave().expect("BWAVE file did not validate BWAVE");
+     * 
+     * let mut y = WaveReader::open("tests/media/audacity_16bit.wav").unwrap();
+     * y.validate_broadcast_wave().expect_err("Plain WAV file DID validate BWAVE");
+     * ```
     */
     pub fn validate_broadcast_wave(&mut self) -> Result<(), ParserError> {
         self.validate_readable()?;
