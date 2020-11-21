@@ -11,23 +11,20 @@ This is currently a work-in-progress!
 
 ```rust
 
-let path = "tests/media/ff_silence.wav";
-
-let mut w = WaveReader::open(path)?;
-let length = w.frame_length()?;
-let format = w.format()?;
-
-let bext = w.broadcast_extension()?;
-println!("Description field: {}", &bext.description);
-println!("Originator field: {}", &bext.originator);
-
-let frame_reader = w.audio_frame_reader()?;
-
-let mut buffer: Vec<i32> = w.create_frame_buffer();
-while( frame_reader.read_integer_frame(&mut buffer) > 0) {
-    println!("Read frames {:?}", &buffer);
-}
-
+ use bwavfile::WaveReader;
+ let mut r = WaveReader::open("tests/media/ff_silence.wav").unwrap();
+ 
+ let format = r.format().unwrap();
+ assert_eq!(format.sample_rate, 44100);
+ assert_eq!(format.channel_count, 1);
+ 
+ let mut frame_reader = r.audio_frame_reader().unwrap();
+ let mut buffer = frame_reader.create_frame_buffer();
+ 
+ let read = frame_reader.read_integer_frame(&mut buffer).unwrap();
+ 
+ assert_eq!(buffer, [0i32]);
+ assert_eq!(read, 1);
 ```
 
 ## Note on Testing
