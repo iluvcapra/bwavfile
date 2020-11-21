@@ -16,8 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install ffmpeg
-      run: sudo apt-get install ffmpeg
+#     - name: Install ffmpeg
+#       run: sudo apt-get install ffmpeg
     - name: Create Test Media
       run: cd tests; sh create_test_media.sh
     - name: Build
