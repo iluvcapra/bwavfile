@@ -19,7 +19,7 @@ jobs:
     - name: Install ffmpeg
       run: sudo apt-get install ffmpeg
     - name: Create Test Media
-      run: sh tests/create_test_media.sh
+      run: cd tests; sh create_test_media.sh
     - name: Build
       run: cargo build --verbose
     - name: Run tests
