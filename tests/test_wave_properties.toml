@@ -1,0 +1,170 @@
+[[wavefile]]
+name = "audacity_16bit.wav"
+channels = 1
+bit_depth = 16
+sample_rate = 44100
+sample_format = "pcm"
+frame_count = 4418
+
+[[wavefile]]
+name = "ff_bwav_51.wav"
+channels = 6
+bit_depth = 24
+sample_rate = 48000
+sample_format = "float"
+frame_count = 4800
+bwav_comment = "FFMPEG-generated 5.1 WAV file with bext metadata"
+bwav_originator = "ffmpeg"
+bwav_originator_reference = "5_1_WAVE_TEST"
+bwav_date = "2020-11-18"
+bwav_creation_time = "13:00:00"
+bwav_time_reference = 0
+bwav_umid = "0x7FFFFFFFFFFFFFFF7FFFFFFFFFFFFFFF00000000000000000000000000000000"
+bwav_coding_history = "A:PCM,48K"
+
+[[wavefile]]
+name = "ff_bwav_stereo.wav"
+channels = 2
+bit_depth = 24
+sample_rate = 48000
+sample_format = "pcm"
+frame_count = 4800
+bwav_comment = "FFMPEG-generated stereo WAV file with bext metadata"
+bwav_originator = "ffmpeg"
+bwav_originator_reference = "STEREO_WAVE_TEST" 
+bwav_date = "2020-11-18"
+bwav_creation_time = "12:00:00"
+bwav_time_reference = 2880000
+bwav_umid = "0x7FFFFFFFFFFFFFFF7FFFFFFFFFFFFFFF00000000000000000000000000000000"
+bwav_coding_history = "A:PCM,48K"
+
+[[wavefile]]
+name = "ff_float.wav"
+channels = 1 
+bit_depth = 32
+sample_rate = 48000
+sample_format = "float"
+frame_count = 4800
+bwav_comment = "float test file"
+bwav_time_reference = 0
+
+
+[[wavefile]]
+name = "ff_longfile.wav"
+channels = 6 
+bit_depth = 24
+sample_rate = 96000
+sample_format = "pcm"
+frame_count = 259200000
+
+
+[[wavefile]]
+name = "ff_minimal.wav"
+channels = 1
+bit_depth = 16
+sample_rate = 44100
+sample_format = "pcm"
+frame_count = 44100
+
+[[wavefile]]
+name = "ff_silence.wav"
+channels = 1
+bit_depth = 16
+sample_rate = 44100
+sample_format = "pcm"
+frame_count = 44100
+
+[[wavefile]]
+name = "pt_16bit.wav"
+channels = 1
+bit_depth = 16
+sample_rate = 48000
+sample_format = "pcm"
+frame_count = 24000
+bwav_originator = "Pro Tools"
+bwav_originator_reference = "aaijNZdiDOIk" 
+bwav_date = "2020-11-18"
+bwav_creation_time = "19:56:53"
+bwav_time_reference = 1036416000
+
+[[wavefile]]
+name = "pt_24bit_51.wav"
+channels = 6
+bit_depth = 24
+sample_rate = 48000
+sample_format = "pcm"
+frame_count = 24000
+bwav_originator = "Pro Tools"
+bwav_originator_reference = "aaijNdlHDPIk" 
+bwav_date = "2020-11-18"
+bwav_creation_time = "19:58:18"
+bwav_time_reference = 1036416000
+
+[[wavefile]]
+name = "pt_24bit_stereo.wav"
+channels = 2
+bit_depth = 24
+sample_rate = 48000
+sample_format = "pcm"
+frame_count = 24000
+bwav_originator = "Pro Tools"
+bwav_originator_reference = "aaijNF9aoPIk" 
+bwav_date = "2020-11-18"
+bwav_creation_time = "19:57:57"
+bwav_time_reference = 1036416000
+
+[[wavefile]]
+name = "pt_24bit.wav"
+channels = 1
+bit_depth = 24
+sample_rate = 48000
+sample_format = "pcm"
+frame_count = 24000
+bwav_originator = "Pro Tools"
+bwav_originator_reference = "aaijNtnVOOIk" 
+bwav_date = "2020-11-18"
+bwav_creation_time = "19:57:08"
+bwav_time_reference = 1036416000
+
+
+[[wavefile]]
+name = "pt_float_51.wav"
+channels = 6
+bit_depth = 32
+sample_rate = 48000
+sample_format = "float"
+frame_count = 24000
+bwav_originator = "Pro Tools"
+bwav_originator_reference = "aaijNViK8PIk" 
+bwav_date = "2020-11-18"
+bwav_creation_time = "19:58:59"
+bwav_time_reference = 1036416000
+
+
+[[wavefile]]
+name = "pt_float_stereo.wav"
+channels = 2
+bit_depth = 32
+sample_rate = 48000
+sample_format = "float"
+frame_count = 24000
+bwav_originator = "Pro Tools"
+bwav_originator_reference = "aaijN!1TjQIk" 
+bwav_date = "2020-11-18"
+bwav_creation_time = "19:59:16"
+bwav_time_reference = 1036416000
+
+
+[[wavefile]]
+name = "pt_float.wav"
+channels = 1
+bit_depth = 32
+sample_rate = 48000
+sample_format = "float"
+frame_count = 24000
+bwav_originator = "Pro Tools"
+bwav_originator_reference = "aaijNFpjYOIk" 
+bwav_date = "2020-11-18"
+bwav_creation_time = "19:57:21"
+bwav_time_reference = 1036416000
+

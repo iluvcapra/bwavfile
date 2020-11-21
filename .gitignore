@@ -2,3 +2,4 @@
 .DS_Store
 target/*
 tests/media/*
+tests/.DS_Store
