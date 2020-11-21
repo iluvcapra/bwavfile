@@ -1,5 +1,5 @@
-![Crates.io](https://img.shields.io/crates/l/bwavfile)
-![Crates.io](https://img.shields.io/crates/v/bwavfile)
+[![Crates.io](https://img.shields.io/crates/l/bwavfile)](LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/bwavfile)](https://crates.io/crates/bwavfile/)
 ![GitHub last commit](https://img.shields.io/github/last-commit/iluvcapra/bwavfile)
 
 # bwavfile
