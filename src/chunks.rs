@@ -67,8 +67,18 @@ pub enum WaveFmtExtendedChannelMask {
  */
 #[derive(Debug)]
 pub struct WaveFmtExtended {
+
+    /// Valid bits per sample
     pub valid_bits_per_sample : u16,
+
+    /// Channel mask
+    /// 
+    /// Identifies the speaker assignment for each channel in the file
     pub channel_mask : WaveFmtExtendedChannelMask,
+
+    /// Codec GUID
+    /// 
+    /// Identifies the codec of the audio stream
     pub type_guid : [u8; 16],
 }
 
@@ -82,18 +92,43 @@ pub struct WaveFmtExtended {
  */
 #[derive(Debug)]
 pub struct WaveFmt {
+
+    /// A tag identifying the codec in use.
+    /// 
+    /// If this is 0xFFFE, the codec will be identified by a GUID
+    /// in `extended_format`
     pub tag: u16,
+
+    /// Count of audio channels in each frame
     pub channel_count: u16,
+
+    /// Sample rate of the audio data
     pub sample_rate: u32,
+
+    /// Count of bytes per second
+    /// 
+    /// By rule, this is `block_alignment * sample_rate`
     pub bytes_per_second: u32,
+
+    /// Count of bytes per audio frame
+    /// 
+    /// By rule, this is `channel_count * bits_per_sample / 8`
     pub block_alignment: u16,
+
+    /// Count of bits stored in the file per sample
     pub bits_per_sample: u16,
+
+    /// Extended format description
+    /// 
+    /// Additional format metadata if `channel_count` is greater than 2,
+    /// or if certain codecs are used.
     pub extended_format: Option<WaveFmtExtended>
 }
 
 
 impl WaveFmt {
 
+    /// Create a new integer PCM format `WaveFmt` 
     pub fn new_pcm(sample_rate: u32, bits_per_sample: u16, channel_count: u16) -> Self {
         let container_bits_per_sample = bits_per_sample + (bits_per_sample % 8);
         let container_bytes_per_sample= container_bits_per_sample / 8;
@@ -113,17 +148,6 @@ impl WaveFmt {
             bits_per_sample: container_bits_per_sample,
             extended_format: None
         }
-    }
-
-    pub fn bytes_per_frame(&self) -> u16 {
-        let bits_per_byte = 8;
-        let bits_per_sample_with_pad = self.bits_per_sample + (self.bits_per_sample % 8);
-        bits_per_sample_with_pad * self.channel_count / bits_per_byte
-    } 
-
-    pub fn valid_broadcast_wave_format(&self) -> bool {
-        let real_alignment = self.block_alignment;
-        self.bytes_per_frame() == real_alignment
     }
 }
 
