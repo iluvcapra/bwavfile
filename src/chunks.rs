@@ -38,7 +38,7 @@ These are from http://dream.cs.bath.ac.uk/researchdev/wave-ex/mulchaud.rtf
 */
 
 #[derive(Debug)]
-enum WaveFmtExtendedChannelMask {
+pub enum WaveFmtExtendedChannelMask {
     FrontLeft        = 0x1,
     FrontRight       = 0x2,
     FrontCenter      = 0x4,
@@ -67,9 +67,9 @@ enum WaveFmtExtendedChannelMask {
  */
 #[derive(Debug)]
 pub struct WaveFmtExtended {
-    valid_bits_per_sample : u16,
-    channel_mask : WaveFmtExtendedChannelMask,
-    type_guid : [u8; 16],
+    pub valid_bits_per_sample : u16,
+    pub channel_mask : WaveFmtExtendedChannelMask,
+    pub type_guid : [u8; 16],
 }
 
 /**
