@@ -35,7 +35,7 @@
         }
     ],
     "format": {
-        "filename": "media/pt_float.wav",
+        "filename": "tests/media/pt_float.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -91,7 +91,7 @@
         }
     ],
     "format": {
-        "filename": "media/audacity_16bit.wav",
+        "filename": "tests/media/audacity_16bit.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -146,7 +146,7 @@
         }
     ],
     "format": {
-        "filename": "media/pt_24bit_51.wav",
+        "filename": "tests/media/pt_24bit_51.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -202,7 +202,7 @@
         }
     ],
     "format": {
-        "filename": "media/pt_float_stereo.wav",
+        "filename": "tests/media/pt_float_stereo.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -259,7 +259,7 @@
         }
     ],
     "format": {
-        "filename": "media/pt_24bit_stereo.wav",
+        "filename": "tests/media/pt_24bit_stereo.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -316,7 +316,7 @@
         }
     ],
     "format": {
-        "filename": "media/ff_float.wav",
+        "filename": "tests/media/ff_float.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -371,7 +371,7 @@
         }
     ],
     "format": {
-        "filename": "media/ff_bwav_stereo.wav",
+        "filename": "tests/media/ff_bwav_stereo.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -431,7 +431,7 @@
         }
     ],
     "format": {
-        "filename": "media/pt_24bit.wav",
+        "filename": "tests/media/pt_24bit.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -489,7 +489,7 @@
         }
     ],
     "format": {
-        "filename": "media/ff_bwav_51.wav",
+        "filename": "tests/media/ff_bwav_51.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -550,7 +550,7 @@
         }
     ],
     "format": {
-        "filename": "media/ff_longfile.wav",
+        "filename": "tests/media/ff_longfile.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -604,7 +604,7 @@
         }
     ],
     "format": {
-        "filename": "media/pt_float_51.wav",
+        "filename": "tests/media/pt_float_51.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -660,7 +660,7 @@
         }
     ],
     "format": {
-        "filename": "media/ff_minimal.wav",
+        "filename": "tests/media/ff_minimal.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -711,7 +711,7 @@
         }
     ],
     "format": {
-        "filename": "media/ff_silence.wav",
+        "filename": "tests/media/ff_silence.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
@@ -762,7 +762,7 @@
         }
     ],
     "format": {
-        "filename": "media/pt_16bit.wav",
+        "filename": "tests/media/pt_16bit.wav",
         "nb_streams": 1,
         "nb_programs": 0,
         "format_name": "wav",
