@@ -3,6 +3,14 @@
 mkdir -p media
 cd media
 
+
+touch error.wav
+
+unzip ../arch_pt_media.zip
+unzip ../arch_audacity_media.zip
+unzip ../arch_ff_media.zip
+rm -rf __MACOSX
+
 # create a silent bext wave file with fixture metadata and a time refernce starting at
 # one minute
 #
@@ -40,10 +48,3 @@ cd media
 # ffmpeg -y -f lavfi -i "anoisesrc=r=48000:a=0.5:c=pink:s=41879" -to 0.1 -ar 48000 -c:a pcm_f32le \
 #     -write_bext 1 \
 #     -metadata "description=float test file" ff_float.wav 
-
-touch error.wav
-
-unzip ../arch_pt_media.zip
-unzip ../arch_audacity_media.zip
-unzip ../arch_ff_media.zip
-rm -rf __MACOSX
