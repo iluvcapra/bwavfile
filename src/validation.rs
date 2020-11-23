@@ -5,12 +5,15 @@ use super::wavereader::{WaveReader};
 
 use std::io::{Read,Seek};
 
+
 impl<R:Read + Seek> WaveReader<R> {
     /**
-    *  Returns without `Err` if the source meets the minimum standard of 
+    * Validate file is readable.
+    * 
+    *  `Ok(())` if the source meets the minimum standard of 
     *  readability by a permissive client:
-    *  1. `fmt` chunk and `data` chunk are present
-    *  1. `fmt` chunk appears before `data` chunk
+    *  - `fmt` chunk and `data` chunk are present
+    *  - `fmt` chunk appears before `data` chunk
     */
     pub fn validate_readable(&mut self) -> Result<(), ParserError> {
         let (fmt_pos, _)  = self.get_chunk_extent_at_index(FMT__SIG, 0)?;
@@ -24,15 +27,17 @@ impl<R:Read + Seek> WaveReader<R> {
     }
 
     /** 
-     * Validate minimal WAVE file
+     * Validate minimal WAVE file.
      * 
-     * Returns without `Err` the source is `validate_readable` AND
+     * `Ok(())` if the source is `validate_readable()` AND
      * 
      *   - Contains _only_ a `fmt` chunk and `data` chunk, with no other chunks present
      *   - is not an RF64/BW64
      * 
      * Some clients require a WAVE file to only contain format and data without any other
      * metadata and this function is provided to validate this condition.
+     * 
+     * ### Examples
      * 
      * ```
      * # use bwavfile::WaveReader;
@@ -64,8 +69,10 @@ impl<R:Read + Seek> WaveReader<R> {
     /**
      * Validate Broadcast-WAVE file format
      * 
-     * Returns without `Err` if `validate_readable()` and file contains a 
+     * Returns `Ok(())` if `validate_readable()` and file contains a 
      * Broadcast-WAV metadata record (a `bext` chunk).
+     * 
+     * ### Examples
      * 
      * ```
      * # use bwavfile::WaveReader;
@@ -87,9 +94,9 @@ impl<R:Read + Seek> WaveReader<R> {
     } 
 
     /**
-     * Verify data is aligned to a block boundary
+     * Verify data is aligned to a block boundary.
      * 
-     * Returns without `Err` if `validate_readable()` and the start of the 
+     * Returns `Ok(())` if `validate_readable()` and the start of the 
      * `data` chunk's content begins at 0x4000.
     */
     pub fn validate_data_chunk_alignment(&mut self) -> Result<() , ParserError> {
@@ -103,10 +110,12 @@ impl<R:Read + Seek> WaveReader<R> {
     }
 
     /**
-     * Returns without `Err` if:
+     * Verify audio data can be appended immediately to this file.
+     * 
+     * Returns `Ok(())` if:
      *  - `validate_readable()`
      *  - there is a `JUNK` or `FLLR` immediately at the beginning of the chunk 
-     *    list adequately large enough to be overwritten by a `ds64` (96 bytes)
+     *    list adequately large enough to be overwritten by a `ds64` (92 bytes)
      *  - `data` is the final chunk
     */
     pub fn validate_prepared_for_append(&mut self) -> Result<(), ParserError> {
