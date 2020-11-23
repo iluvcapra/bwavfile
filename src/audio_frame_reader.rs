@@ -7,6 +7,8 @@ use byteorder::ReadBytesExt;
 use super::chunks::WaveFmt;
 use super::errors::Error;
 
+/// Read samples from a `WaveFileReader`
+/// 
 #[derive(Debug)]
 pub struct AudioFrameReader<R: Read + Seek> {
     inner : R,
@@ -14,7 +16,8 @@ pub struct AudioFrameReader<R: Read + Seek> {
 }
 
 impl<R: Read + Seek> AudioFrameReader<R> {
-    /// Create a new AudioFrameReader, taking possession of a reader.
+
+    /// Create a new `AudioFrameReader`
     pub fn new(inner: R, format: WaveFmt) -> Self {
         assert!(format.block_alignment * 8 == format.bits_per_sample * format.channel_count, 
             "Unable to read audio frames from packed formats: block alignment is {}, should be {}",
@@ -24,16 +27,25 @@ impl<R: Read + Seek> AudioFrameReader<R> {
         AudioFrameReader { inner , format }
     }
 
+    /// Locate the read position to a different frame
     pub fn locate(&mut self, to :u64) -> Result<u64,Error> {
         let position = to * self.format.block_alignment as u64;
         let seek_result = self.inner.seek(Start(position))?;
         Ok( seek_result / self.format.block_alignment as u64 )
     }
 
+    /// Create a frame buffer sized to hold frames of the reader
+    /// 
+    /// This is a conveneince method that creates a `Vec<i32>` with
+    /// as many elements as there are channels in the underlying stream. 
     pub fn create_frame_buffer(&self) -> Vec<i32> {
         vec![0i32; self.format.channel_count as usize]
     }
 
+    /// Read a frame
+    /// 
+    /// A single frame is read from the audio stream and the read location
+    /// is advanced one frame.
     pub fn read_integer_frame(&mut self, buffer:&mut [i32]) -> Result<u64,Error> {
         assert!(buffer.len() as u16 == self.format.channel_count, 
             "read_integer_frame was called with a mis-sized buffer, expected {}, was {}", 

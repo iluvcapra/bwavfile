@@ -65,3 +65,4 @@ mod wavewriter;
 pub use wavereader::{WaveReader};
 pub use chunks::{WaveFmt,Bext};
 pub use errors::Error;
+pub use audio_frame_reader::AudioFrameReader;
