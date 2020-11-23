@@ -1,15 +1,10 @@
 #!/bin/zsh
 
 mkdir -p media
-cd media
 
+touch media/error.wav
 
-touch error.wav
-
-unzip ../arch_pt_media.zip
-unzip ../arch_audacity_media.zip
-unzip ../arch_ff_media.zip
-rm -rf __MACOSX
+tar xzf test_media.tgz
 
 # create a silent bext wave file with fixture metadata and a time refernce starting at
 # one minute
