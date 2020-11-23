@@ -103,7 +103,6 @@ impl<R: Read + Seek> Iterator for Parser<R> {
 
     fn next(&mut self) -> Option<Event> {
         let (event, next_state) = self.advance();
-        //println!("{:?}", event);
         self.state = next_state;
         return event;
     }
