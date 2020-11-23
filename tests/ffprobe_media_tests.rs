@@ -14,7 +14,7 @@ fn assert_match_stream<T>(stream_key: &str,
                           T: Into<Value>
                     {
 
-    let mut json_file = File::open("tests/media_ffprobe_result.json").unwrap();
+    let mut json_file = File::open("tests/ffprobe_media_tests.json").unwrap();
     let mut s = String::new();
     json_file.read_to_string(&mut s).unwrap();
     if let Value::Array(v) = from_str(&mut s).unwrap() { /* */
