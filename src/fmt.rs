@@ -10,25 +10,70 @@ enum FormatTags {
     Extensible = 0xFFFE
 }
 
-const PCM_SUBTYPE_UUID: [u8; 16] = [0x00, 0x00, 0x00, 0x01,
-                                    0x00, 0x00, 0x00, 0x10,
-                                    0x80, 0x00, 0x00, 0xaa,
-                                    0x00, 0x38, 0x9b, 0x71];
 
-const FLOAT_SUBTYPE_UUID: [u8; 16] = [0x00, 0x00, 0x00, 0x03,
-                                      0x00, 0x00, 0x00, 0x10,
-                                      0x80, 0x00, 0x00, 0xaa,
-                                      0x00, 0x38, 0x9b, 0x71];
+const PCM_SUBTYPE_UUID: [u8; 16] = [0x00, 0x00, 0x00, 0x01,0x00, 0x00, 0x00, 0x10, 0x80, 0x00, 0x00, 0xaa,0x00, 0x38, 0x9b, 0x71];
+
+const FLOAT_SUBTYPE_UUID: [u8; 16] = [0x00, 0x00, 0x00, 0x03,0x00, 0x00, 0x00, 0x10, 0x80, 0x00, 0x00, 0xaa,0x00, 0x38, 0x9b, 0x71];
+
+/*
+
+http://dream.cs.bath.ac.uk/researchdev/wave-ex/bformat.html
+
+Integer format: 
+SUBTYPE_AMBISONIC_B_FORMAT_PCM 
+ {00000001-0721-11d3-8644-C8C1CA000000}
+
+Floating-point format:
+
+SUBTYPE_AMBISONIC_B_FORMAT_IEEE_FLOAT 
+{00000003-0721-11d3-8644-C8C1CA000000}
+
+In the case of ambisonics, I'm guessing we'd ignore the channel map and implied
+channels W, X, Y, Z
+*/
+                          
+/// ADM Audio ID record
+/// 
+/// This structure relates a channel in the wave file to either a common ADM
+/// channel definition or further definition in the WAV file's ADM metadata 
+/// chunk.
+/// 
+/// An individial channel in a WAV file can have multiple Audio IDs in an ADM 
+/// AudioProgramme.
+/// 
+/// See BS.2088-1 § 8, also BS.2094, also blahblahblah...
+pub struct ADMAudioID {
+    track_uid: [char; 12],
+    channel_format_ref: [char; 14],
+    pack_ref: [char; 11]
+}
+
+/// Describes a single channel in a WAV file.
+pub struct ChannelDescriptor {
+    /// Index, the offset of this channel's samples in one frame.
+    index: u16,
+
+    /// Channel assignment
+    /// 
+    /// This is either implied (in the case of mono or stereo wave files) or
+    /// explicitly given in `WaveFormatExtentended` for files with more tracks.
+    speaker: WaveFmtExtendedChannelMask,
+
+    /// ADM audioTrackUIDs
+    adm_track_audio_ids: Vec<ADMAudioID>,
+}
+
+
 
 /*
 https://docs.microsoft.com/en-us/windows-hardware/drivers/audio/subformat-guids-for-compressed-audio-formats
-http://dream.cs.bath.ac.uk/researchdev/wave-ex/bformat.html
 
 These are from http://dream.cs.bath.ac.uk/researchdev/wave-ex/mulchaud.rtf
 */
 
 #[derive(Debug)]
 pub enum WaveFmtExtendedChannelMask {
+    DirectOut        = 0x0,
     FrontLeft        = 0x1,
     FrontRight       = 0x2,
     FrontCenter      = 0x4,
@@ -46,7 +91,7 @@ pub enum WaveFmtExtendedChannelMask {
     TopFrontRight    = 0x4000,
     TopBackLeft      = 0x8000,
     TopBackCenter    = 0x10000,
-    TopBackRight     = 0x20000 
+    TopBackRight     = 0x20000,
 }
 
 
