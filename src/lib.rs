@@ -49,6 +49,9 @@ Things that are _not_ necessarily in the scope of this package:
 
 ### Implementation of Broadcast Wave Files
 - [EBU Tech 3285][ebu3285] (May 2011), "Specification of the Broadcast Wave Format (BWF)"
+  - [Supplement 1](https://tech.ebu.ch/docs/tech/tech3285s1.pdf) (July 1997): MPEG Audio
+- [EBU Rec 68](https://tech.ebu.ch/docs/r/r068.pdf): Signal modulation and format constraints
+
 
 ### Implementation of 64-bit Wave Files
 - [ITU-R 2088][itu2088] (October 2019), "Long-form file format for the international exchange of audio programme materials with metadata"
@@ -66,8 +69,20 @@ Things that are _not_ necessarily in the scope of this package:
 - [RFC 3261][rfc3261] (June 1998) "WAVE and AVI Codec Registries" 
 - [Peter Kabal, McGill University](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html)
  - [Multimedia Programming Interface and Data Specifications 1.0](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf) 
-    IBM Corporation and Microsoft Corporation, (August 1991)
+    (August 1991), IBM Corporation and Microsoft Corporation
 
+
+### Formatting of Specific Metadatums
+- [iXML Metadata Specification](http://www.gallery.co.uk/ixml/) (April 2019) 
+- EBU 3285 Supplements:
+  - [Supplement 2](https://tech.ebu.ch/docs/tech/tech3285s2.pdf) (July 2001): Quality chunk and cuesheet
+  - [Supplement 3](https://tech.ebu.ch/docs/tech/tech3285s3.pdf) (July 2001): Peak Metadata
+  - [Supplement 4](https://tech.ebu.ch/docs/tech/tech3285s4.pdf) (April 2003): Link Metadata
+  - [Supplement 5](https://tech.ebu.ch/docs/tech/tech3285s5.pdf) (May 2018): ADM Metadata
+  - [Supplement 6](https://tech.ebu.ch/docs/tech/tech3285s6.pdf) (October 2009): Dolby Metadata 
+- [EBU Tech R099](https://tech.ebu.ch/docs/r/r099.pdf) (October 2011) "‘Unique’ Source Identifier (USID) for use in the 
+  <OriginatorReference> field of the Broadcast Wave Format"
+- [EBU Tech R098](https://tech.ebu.ch/docs/r/r098.pdf) (1999) "Format for the <CodingHistory> field in Broadcast Wave Format files, BWF"
 
 [ebu3285]: https://tech.ebu.ch/docs/tech/tech3285.pdf
 [ebu3306v1]: https://tech.ebu.ch/docs/tech/tech3306v1_1.pdf
@@ -95,11 +110,14 @@ mod validation;
 mod raw_chunk_reader;
 mod audio_frame_reader;
 mod chunks;
+mod bext;
+mod fmt;
 
 mod wavereader;
 mod wavewriter;
 
 pub use wavereader::{WaveReader};
-pub use chunks::{WaveFmt,Bext};
+pub use bext::Bext;
+pub use fmt::{WaveFmt, WaveFmtExtended};
 pub use errors::Error;
 pub use audio_frame_reader::AudioFrameReader;

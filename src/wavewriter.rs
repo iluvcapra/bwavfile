@@ -3,7 +3,9 @@ use std::fs::File;
 use std::io::Cursor;
 
 use super::errors::Error;
-use super::chunks::{WaveFmt, Bext, WriteBWaveChunks};
+use super::chunks::{WriteBWaveChunks};
+use super::bext::Bext;
+use super::fmt::{WaveFmt};
 use super::fourcc::{FourCC, RIFF_SIG, WAVE_SIG, FMT__SIG, JUNK_SIG, BEXT_SIG, DATA_SIG, WriteFourCC};
 
 use byteorder::LittleEndian;

@@ -4,7 +4,7 @@ use std::io::SeekFrom::{Start,};
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 
-use super::chunks::WaveFmt;
+use super::fmt::WaveFmt;
 use super::errors::Error;
 
 /// Read audio frames
