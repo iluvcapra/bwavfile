@@ -12,7 +12,7 @@ use bwavfile::WaveReader;
 // These tests compare metadata and format data read by ffprobe with the same values
 // as read by `WaveReader`.
 
-// This seems rickety but we're going with it
+// This is rickety but we're going with it
 fn assert_match_stream<T>(stream_key: &str, 
                     other: impl Fn(&mut WaveReader<File>) -> T)
                     where T: PartialEq + Debug,
