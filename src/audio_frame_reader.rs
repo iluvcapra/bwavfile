@@ -4,7 +4,7 @@ use std::io::SeekFrom::{Start,};
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 
-use super::fmt::WaveFmt;
+use super::fmt::{WaveFmt};
 use super::errors::Error;
 
 /// Read audio frames
@@ -33,7 +33,10 @@ impl<R: Read + Seek> AudioFrameReader<R> {
             "Unable to read audio frames from packed formats: block alignment is {}, should be {}",
             format.block_alignment, (format.bits_per_sample / 8 ) * format.channel_count);
         
-        assert!(format.tag == 1, "Unsupported format tag {}", format.tag);
+
+        assert!(format.tag == 0x01 , 
+                "Unsupported format tag {:?}", format.tag);
+                
         AudioFrameReader { inner , format }
     }
 
@@ -84,4 +87,3 @@ impl<R: Read + Seek> AudioFrameReader<R> {
         Ok( 1 )
     }
 }
-

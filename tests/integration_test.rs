@@ -27,7 +27,7 @@ fn test_format_silence() -> Result<(),Error> {
 
     assert_eq!(format.sample_rate, 44100);
     assert_eq!(format.channel_count, 1);
-    assert_eq!(format.tag, 1);
+    assert_eq!(format.tag as u16, 1);
     Ok( () )
 }
 

@@ -1,12 +1,17 @@
 use std::io;
 use super::fourcc::FourCC;
 
+use uuid;
+
 /// Errors returned by methods in this crate.
 #[derive(Debug)]
 pub enum Error {
 
     /// An `io::Error` occurred
     IOError(io::Error),
+
+    /// An error occured reading a tag UUID
+    UuidError(uuid::Error),
 
     /// The file does not begin with a recognized WAVE header
     HeaderNotRecognized,
@@ -34,7 +39,8 @@ pub enum Error {
     InsufficientDS64Reservation {expected: u64, actual: u64},
 
     /// The file is not optimized for writing new data
-    DataChunkNotPreparedForAppend
+    DataChunkNotPreparedForAppend,
+
 }
 
 
@@ -42,4 +48,10 @@ impl From<io::Error> for Error {
     fn from(error: io::Error) -> Error {
         Error::IOError(error)
     }
+}
+
+impl From <uuid::Error> for Error {
+    fn from(error: uuid::Error) -> Error {
+        Error::UuidError(error)
+    }  
 }
