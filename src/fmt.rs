@@ -197,10 +197,15 @@ impl WaveFmt {
         }
     }
 
+    /// Format or codec of the file's audio data.
+    /// 
+    /// The `CommonFormat` unifies the format tag and the format extension GUID. Use this
+    /// method to determine the codec.
     pub fn common_format(&self) -> CommonFormat {
         CommonFormat::make( self.tag, self.extended_format.map(|ext| ext.type_guid))
     }
 
+    /// Channel descriptors for each channel.
     pub fn channels(&self) -> Vec<ChannelDescriptor> {
         match self.channel_count {
             1 => vec![
