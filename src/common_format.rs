@@ -48,12 +48,25 @@ fn uuid_from_basic_tag(tag: u16) -> Uuid {
 ///
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum CommonFormat {
+    /// Integer linear PCM
     IntegerPCM,
+ 
+    /// IEEE Floating-point Linear PCM
     IeeeFloatPCM,
+ 
+    /// MPEG
     Mpeg,
+ 
+    /// Ambisonic B-Format Linear PCM
     AmbisonicBFormatIntegerPCM,
+ 
+    /// Ambisonic B-Format Float PCM
     AmbisonicBFormatIeeeFloatPCM,
+ 
+    /// An unknown format identified by a basic format tag.
     UnknownBasic(u16),
+ 
+    /// An unknown format identified by an extension UUID.
     UnknownExtended(Uuid),
 }
 
