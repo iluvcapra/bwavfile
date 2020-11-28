@@ -103,7 +103,7 @@ impl<R: Read + Seek> WaveReader<R> {
     /**
      * Create an `AudioFrameReader` for reading each audio frame.
     */
-    pub fn audio_frame_reader(&mut self) -> Result<AudioFrameReader<RawChunkReader<R>>, ParserError> {
+    pub fn audio_frame_reader(&mut self) -> Result<AudioFrameReader<impl RRead>>, ParserError> {
         let format = self.format()?;
         let audio_chunk_reader = self.chunk_reader(DATA_SIG, 0)?;
         Ok(AudioFrameReader::new(audio_chunk_reader, format))
@@ -177,11 +177,13 @@ impl<R: Read + Seek> WaveReader<R> {
         }
     }
 
-    /// Read ADM XML data.
+    /// Read AXML data.
+    /// 
+    /// By convention this will generally be ADM metadata. 
     /// 
     /// If there are no iXML metadata present in the file, 
     /// Err(Error::ChunkMissing { "axml" } will be returned. 
-    pub fn adm_xml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
+    pub fn axml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
         let axml_sig: FourCC = FourCC::make(b"axml");
         let mut chunk = self.chunk_reader(axml_sig, 0)?;
 
@@ -190,6 +192,8 @@ impl<R: Read + Seek> WaveReader<R> {
             Err(error) => Err(error.into())
         }
     }
+
+
 
     /**
     * Validate file is readable.
