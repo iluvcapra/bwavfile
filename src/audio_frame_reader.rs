@@ -67,7 +67,7 @@ impl<R: Read + Seek> AudioFrameReader<R> {
     /// 
     /// Regardless of the number of bits in the audio sample, this method
     /// always writes `i32` samples back to the buffer. These samples are 
-    /// written back "left-aligned" so samples that are shorter than i32
+    /// written back "right-aligned" so samples that are shorter than i32
     /// will leave the MSB bits empty. 
     /// 
     /// For example: A full-code sample in 16 bit (0xFFFF) will be written 
