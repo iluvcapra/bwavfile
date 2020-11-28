@@ -2,6 +2,7 @@ extern crate bwavfile;
 
 use bwavfile::WaveReader;
 use bwavfile::Error;
+use bwavfile::{ ChannelMask}; 
 
 #[test]
 fn test_open() {
@@ -115,4 +116,44 @@ fn test_locate_multichannel_read() {
     assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
     assert_eq!(buffer[0], 0x109422_i32);
     assert_eq!(buffer[1], -698901_i32); // 7689707 - 8388608
+}
+
+#[test]
+fn test_channels_stereo() {
+    let path = "tests/media/ff_pink.wav";
+
+    let mut w = WaveReader::open(path).expect("Failure opening test file");
+    let channels = w.channels().unwrap();
+
+    assert_eq!(channels.len(), 2);
+    assert_eq!(channels[0].index,0);
+    assert_eq!(channels[1].index,1);
+    assert_eq!(channels[0].speaker,ChannelMask::FrontLeft);
+    assert_eq!(channels[1].speaker,ChannelMask::FrontRight);
+}
+
+#[test]
+fn test_channels_mono_no_extended() {
+    let path = "tests/media/audacity_16bit.wav";
+
+    let mut w = WaveReader::open(path).expect("Failure opening test file");
+    let channels = w.channels().unwrap();
+
+    assert_eq!(channels.len(), 1);
+    assert_eq!(channels[0].index,0);
+    assert_eq!(channels[0].speaker,ChannelMask::FrontCenter);
+}
+
+#[test]
+fn test_channels_stereo_no_fmt_extended() {
+    let path = "tests/media/pt_24bit_stereo.wav";
+
+    let mut w = WaveReader::open(path).expect("Failure opening test file");
+    let channels = w.channels().unwrap();
+
+    assert_eq!(channels.len(), 2);
+    assert_eq!(channels[0].index,0);
+    assert_eq!(channels[1].index,1);
+    assert_eq!(channels[0].speaker,ChannelMask::FrontLeft);
+    assert_eq!(channels[1].speaker,ChannelMask::FrontRight);
 }
