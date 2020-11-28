@@ -11,7 +11,8 @@ use super::fourcc::{FourCC, RIFF_SIG, WAVE_SIG, FMT__SIG, JUNK_SIG, BEXT_SIG, DA
 use byteorder::LittleEndian;
 use byteorder::WriteBytesExt;
 
-struct WaveWriter<W> where W: Write + Seek {
+/// This isn't working yet, do not use.
+pub struct WaveWriter<W> where W: Write + Seek {
     inner : W
 }
 
@@ -91,14 +92,3 @@ impl<W:Write + Seek> WaveWriter<W> {
     }
 }
 
-#[test]
-fn test_chunk_append() -> Result<(), Error> {
-    let mut test :Vec<u8> = vec![];
-    let mut cursor = Cursor::new(test);
-    let f = WaveFmt::new_pcm(48000, 16, 1);
-    let mut w = WaveWriter::make(cursor, f, None)?;
-
-    
-
-    Ok(())
-}

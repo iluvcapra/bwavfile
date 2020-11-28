@@ -119,7 +119,8 @@ mod wavereader;
 mod wavewriter;
 
 pub use errors::Error;
-pub use wavereader::{WaveReader};
+pub use wavereader::WaveReader;
+pub use wavewriter::WaveWriter;
 pub use bext::Bext;
 pub use fmt::{WaveFmt, WaveFmtExtended, ChannelDescriptor, ChannelMask};
 pub use common_format::CommonFormat;

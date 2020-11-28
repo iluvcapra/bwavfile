@@ -1,8 +1,7 @@
-use std::convert::TryFrom;
 use uuid::Uuid;
-use super::errors::Error;
 use super::common_format::CommonFormat;
 
+#[allow(dead_code)]
 
 /// ADM Audio ID record
 /// 
