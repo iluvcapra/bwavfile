@@ -6,6 +6,7 @@ use byteorder::ReadBytesExt;
 
 use super::fmt::{WaveFmt};
 use super::errors::Error;
+use super::CommonFormat;
 
 /// Read audio frames
 /// 
@@ -34,7 +35,7 @@ impl<R: Read + Seek> AudioFrameReader<R> {
             format.block_alignment, (format.bits_per_sample / 8 ) * format.channel_count);
         
 
-        assert!(format.tag == 0x01 , 
+        assert!(format.common_format() == CommonFormat::IntegerPCM , 
                 "Unsupported format tag {:?}", format.tag);
                 
         AudioFrameReader { inner , format }
@@ -43,6 +44,8 @@ impl<R: Read + Seek> AudioFrameReader<R> {
     /// Locate the read position to a different frame
     /// 
     /// Seeks within the audio stream.
+    /// 
+    /// Returns the new location of the read position.
     pub fn locate(&mut self, to :u64) -> Result<u64,Error> {
         let position = to * self.format.block_alignment as u64;
         let seek_result = self.inner.seek(Start(position))?;
@@ -61,6 +64,15 @@ impl<R: Read + Seek> AudioFrameReader<R> {
     /// 
     /// A single frame is read from the audio stream and the read location
     /// is advanced one frame.
+    /// 
+    /// Regardless of the number of bits in the audio sample, this method
+    /// always writes `i32` samples back to the buffer. These samples are 
+    /// written back "left-aligned" so samples that are shorter than i32
+    /// will leave the MSB bits empty. 
+    /// 
+    /// For example: A full-code sample in 16 bit (0xFFFF) will be written 
+    /// back to the buffer as 0x0000FFFF.
+    ///  
     /// 
     /// ### Panics
     /// 

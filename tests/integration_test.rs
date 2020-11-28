@@ -75,3 +75,44 @@ fn test_minimal_wave()  {
         assert!(true);
     }
 }
+
+#[test]
+fn test_read() {
+    let path = "tests/media/audacity_16bit.wav";
+
+    let mut w = WaveReader::open(path).expect("Failure opening test file");
+
+    let mut reader = w.audio_frame_reader().unwrap();
+
+    let mut buffer = reader.create_frame_buffer();
+
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], -2823_i32);
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], 2012_i32);
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], 4524_i32); 
+}
+
+#[test]
+fn test_locate_multichannel_read() {
+    let path = "tests/media/ff_pink.wav";
+
+    let mut w = WaveReader::open(path).expect("Failure opening test file");
+
+    let mut reader = w.audio_frame_reader().unwrap();
+
+    let mut buffer = reader.create_frame_buffer();
+
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], 332702_i32);
+    assert_eq!(buffer[1], 3258791_i32);
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], -258742_i32); // 0x800000 = 8388608 // 8129866 - 8388608
+    assert_eq!(buffer[1], 0x0D7EF9_i32);
+
+    assert_eq!(reader.locate(100).unwrap(), 100);
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], 0x109422_i32);
+    assert_eq!(buffer[1], -698901_i32); // 7689707 - 8388608
+}
