@@ -23,16 +23,16 @@ pub struct ADMAudioID {
 /// Describes a single channel in a WAV file.
 pub struct ChannelDescriptor {
     /// Index, the offset of this channel's samples in one frame.
-    index: u16,
+    pub index: u16,
 
     /// Channel assignment
     /// 
     /// This is either implied (in the case of mono or stereo wave files) or
     /// explicitly given in `WaveFormatExtentended` for files with more tracks.
-    speaker: ChannelMask,
+    pub speaker: ChannelMask,
 
     /// ADM audioTrackUIDs
-    adm_track_audio_ids: Vec<ADMAudioID>,
+    pub adm_track_audio_ids: Vec<ADMAudioID>,
 }
 
 
