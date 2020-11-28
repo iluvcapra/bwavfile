@@ -12,7 +12,7 @@ This is currently a work-in-progress!
 
 - Read standard WAV, Broadcast-Wave, and 64-bit RF64 and BW64 wave files with one interface for 
   all types with transparent format detection.
-- Unififed format definition interface for standard and extended-format wave files.
+- Unified format definition interface for standard and extended-format wave files.
 - Read channel/speaker map metadata.
 - Read standard EBU Broadcast-Wave metadata and decode to fields, including timestamp and SMPTE UMID.
 - Validate the compatibility of a given wave file for certain regimes.
