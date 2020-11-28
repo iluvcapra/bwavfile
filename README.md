@@ -20,8 +20,8 @@ This is currently a work-in-progress!
 
 ### In Progress
 
-- Wave/RF64 file writing
-- iXML and ADM XML metadata reading/writing
+- Wave/RF64 file writing.
+- iXML and ADM XML metadata reading/writing.
 
 
 ## Use Examples
