@@ -163,6 +163,34 @@ impl<R: Read + Seek> WaveReader<R> {
             .collect() )
     }
 
+    /// Read iXML data.
+    /// 
+    /// If there are no iXML metadata present in the file, 
+    /// Err(Error::ChunkMissing { "iXML" } will be returned.
+    pub fn ixml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
+        let ixml_sig: FourCC = FourCC::make(b"iXML");
+        let mut chunk = self.chunk_reader(ixml_sig, 0)?;
+
+        match chunk.read_to_end(buffer) {
+            Ok(read) => Ok(read),
+            Err(error) => Err(error.into())
+        }
+    }
+
+    /// Read ADM XML data.
+    /// 
+    /// If there are no iXML metadata present in the file, 
+    /// Err(Error::ChunkMissing { "axml" } will be returned. 
+    pub fn adm_xml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
+        let axml_sig: FourCC = FourCC::make(b"axml");
+        let mut chunk = self.chunk_reader(axml_sig, 0)?;
+
+        match chunk.read_to_end(buffer) {
+            Ok(read) => Ok(read),
+            Err(error) => Err(error.into())
+        }
+    }
+
     /**
     * Validate file is readable.
     * 
