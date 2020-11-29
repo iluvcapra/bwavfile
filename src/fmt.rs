@@ -148,7 +148,9 @@ pub struct WaveFmt {
     /// Count of audio channels in each frame
     pub channel_count: u16,
 
-    /// Sample rate of the audio data
+    /// Playback rate of the audio data
+    ///
+    /// In frames per second.
     pub sample_rate: u32,
 
     /// Count of bytes per second
@@ -162,6 +164,16 @@ pub struct WaveFmt {
     pub block_alignment: u16,
 
     /// Count of bits stored in the file per sample
+    ///
+    /// By rule, `bits_per_sample % 8 == 0` for Broadcast-Wave files.
+    ///
+    /// Modern clients will encode
+    /// unusual sample sizes in normal byte sizes but will set the valid_bits
+    /// flag in extended format record.
+    ///
+    /// Generally speaking this will be true for all modern wave files, though
+    /// there was an historical "packed" stereo format of 20 bits per sample,
+    /// 5 bytes per frame, 5 bytes block alignment.
     pub bits_per_sample: u16,
 
     /// Extended format description
