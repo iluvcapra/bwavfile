@@ -100,10 +100,14 @@ Things that are _not_ necessarily in the scope of this package:
 
 extern crate encoding;
 extern crate byteorder;
+extern crate uuid;
 
-mod parser;
 mod fourcc;
 mod errors;
+mod common_format;
+
+mod parser;
+
 
 mod raw_chunk_reader;
 mod audio_frame_reader;
@@ -114,8 +118,10 @@ mod fmt;
 mod wavereader;
 mod wavewriter;
 
-pub use wavereader::{WaveReader};
-pub use bext::Bext;
-pub use fmt::{WaveFmt, WaveFmtExtended};
 pub use errors::Error;
+pub use wavereader::WaveReader;
+pub use wavewriter::WaveWriter;
+pub use bext::Bext;
+pub use fmt::{WaveFmt, WaveFmtExtended, ChannelDescriptor, ChannelMask};
+pub use common_format::CommonFormat;
 pub use audio_frame_reader::AudioFrameReader;

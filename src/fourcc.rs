@@ -106,7 +106,6 @@ pub const BEXT_SIG: FourCC = FourCC::make(b"bext");
 pub const JUNK_SIG: FourCC = FourCC::make(b"JUNK");
 pub const FLLR_SIG: FourCC = FourCC::make(b"FLLR");
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

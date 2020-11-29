@@ -1,44 +1,15 @@
+use uuid::Uuid;
+use super::common_format::CommonFormat;
 
-/**
- * References:
- * - http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/multichaudP.pdf
-*/
-#[derive(PartialEq)]
-enum FormatTags {
-    Integer = 0x0001,
-    Float = 0x0003,
-    Extensible = 0xFFFE
-}
+#[allow(dead_code)]
 
-
-const PCM_SUBTYPE_UUID: [u8; 16] = [0x00, 0x00, 0x00, 0x01,0x00, 0x00, 0x00, 0x10, 0x80, 0x00, 0x00, 0xaa,0x00, 0x38, 0x9b, 0x71];
-
-const FLOAT_SUBTYPE_UUID: [u8; 16] = [0x00, 0x00, 0x00, 0x03,0x00, 0x00, 0x00, 0x10, 0x80, 0x00, 0x00, 0xaa,0x00, 0x38, 0x9b, 0x71];
-
-/*
-
-http://dream.cs.bath.ac.uk/researchdev/wave-ex/bformat.html
-
-Integer format: 
-SUBTYPE_AMBISONIC_B_FORMAT_PCM 
- {00000001-0721-11d3-8644-C8C1CA000000}
-
-Floating-point format:
-
-SUBTYPE_AMBISONIC_B_FORMAT_IEEE_FLOAT 
-{00000003-0721-11d3-8644-C8C1CA000000}
-
-In the case of ambisonics, I'm guessing we'd ignore the channel map and implied
-channels W, X, Y, Z
-*/
-                          
 /// ADM Audio ID record
 /// 
 /// This structure relates a channel in the wave file to either a common ADM
 /// channel definition or further definition in the WAV file's ADM metadata 
 /// chunk.
 /// 
-/// An individial channel in a WAV file can have multiple Audio IDs in an ADM 
+/// An individual channel in a WAV file can have multiple Audio IDs in an ADM 
 /// AudioProgramme.
 /// 
 /// See BS.2088-1 § 8, also BS.2094, also blahblahblah...
@@ -51,16 +22,16 @@ pub struct ADMAudioID {
 /// Describes a single channel in a WAV file.
 pub struct ChannelDescriptor {
     /// Index, the offset of this channel's samples in one frame.
-    index: u16,
+    pub index: u16,
 
     /// Channel assignment
     /// 
     /// This is either implied (in the case of mono or stereo wave files) or
     /// explicitly given in `WaveFormatExtentended` for files with more tracks.
-    speaker: WaveFmtExtendedChannelMask,
+    pub speaker: ChannelMask,
 
     /// ADM audioTrackUIDs
-    adm_track_audio_ids: Vec<ADMAudioID>,
+    pub adm_track_audio_ids: Vec<ADMAudioID>,
 }
 
 
@@ -71,8 +42,8 @@ https://docs.microsoft.com/en-us/windows-hardware/drivers/audio/subformat-guids-
 These are from http://dream.cs.bath.ac.uk/researchdev/wave-ex/mulchaud.rtf
 */
 
-#[derive(Debug)]
-pub enum WaveFmtExtendedChannelMask {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ChannelMask {
     DirectOut        = 0x0,
     FrontLeft        = 0x1,
     FrontRight       = 0x2,
@@ -94,13 +65,53 @@ pub enum WaveFmtExtendedChannelMask {
     TopBackRight     = 0x20000,
 }
 
+impl From<u32> for ChannelMask {
+    
+    fn from(value: u32) -> Self { 
+        match value {
+            0x1 => Self::FrontLeft,
+            0x2 => Self::FrontRight,
+            0x4 => Self::FrontCenter, 
+            0x8 => Self::LowFrequency,
+            0x10 => Self::BackLeft,
+            0x20 => Self::BackRight,
+            0x40 => Self::FrontCenterLeft,
+            0x80 => Self::FrontCenterRight,
+            0x100 => Self::BackCenter,
+            0x200 => Self::SideLeft,
+            0x400 => Self::SideRight,
+            0x800 => Self::TopCenter,
+            0x1000 => Self::TopFrontLeft, 
+            0x2000 => Self::TopFrontCenter,
+            0x4000 => Self::TopFrontRight,
+            0x8000 => Self::TopBackLeft,
+            0x10000 => Self::TopBackCenter,
+            0x20000 => Self::TopBackRight,
+            _ => Self::DirectOut 
+        }
+    }
+}
+
+impl ChannelMask {
+    pub fn channels(input_mask : u32, channel_count: u16) -> Vec<ChannelMask> {
+        let reserved_mask = 0xfff2_0000_u32;
+        if (input_mask & reserved_mask) > 0 {
+            vec![ ChannelMask::DirectOut ; channel_count as usize ]
+        } else {
+            (0..18).map(|i| 1 << i )
+                .filter(|mask| mask & input_mask > 0)
+                .map(|mask| Into::<ChannelMask>::into(mask))
+                .collect()
+        }
+    }
+}
 
 /**
  * Extended Wave Format
  * 
  * https://docs.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible
  */
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct WaveFmtExtended {
 
     /// Valid bits per sample
@@ -109,12 +120,12 @@ pub struct WaveFmtExtended {
     /// Channel mask
     /// 
     /// Identifies the speaker assignment for each channel in the file
-    pub channel_mask : WaveFmtExtendedChannelMask,
+    pub channel_mask : u32,
 
     /// Codec GUID
     /// 
     /// Identifies the codec of the audio stream
-    pub type_guid : [u8; 16],
+    pub type_guid : Uuid,
 }
 
 /**
@@ -125,7 +136,7 @@ pub struct WaveFmtExtended {
  * rate, sample binary format, channel count, etc.
  *
  */
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct WaveFmt {
 
     /// A tag identifying the codec in use.
@@ -168,10 +179,10 @@ impl WaveFmt {
         let container_bits_per_sample = bits_per_sample + (bits_per_sample % 8);
         let container_bytes_per_sample= container_bits_per_sample / 8;
 
-        let tag :u16 = match channel_count {
-            0 => panic!("Error"),
-            1..=2 => FormatTags::Integer as u16,
-            _ => FormatTags::Extensible as u16,
+        let tag : u16 = match channel_count {
+            1..=2 => 0x01,
+            x if x > 2 => 0xFFFE,
+            x => panic!("Invalid channel count {}", x)
         };
 
         WaveFmt {
@@ -182,6 +193,53 @@ impl WaveFmt {
             block_alignment: container_bytes_per_sample * channel_count,
             bits_per_sample: container_bits_per_sample,
             extended_format: None
+        }
+    }
+
+    /// Format or codec of the file's audio data.
+    /// 
+    /// The `CommonFormat` unifies the format tag and the format extension GUID. Use this
+    /// method to determine the codec.
+    pub fn common_format(&self) -> CommonFormat {
+        CommonFormat::make( self.tag, self.extended_format.map(|ext| ext.type_guid))
+    }
+
+    /// Channel descriptors for each channel.
+    pub fn channels(&self) -> Vec<ChannelDescriptor> {
+        match self.channel_count {
+            1 => vec![
+                ChannelDescriptor {
+                    index: 0,
+                    speaker: ChannelMask::FrontCenter,
+                    adm_track_audio_ids: vec![]
+                }
+            ],
+            2 => vec![
+                ChannelDescriptor {
+                    index: 0,
+                    speaker: ChannelMask::FrontLeft,
+                    adm_track_audio_ids: vec![]
+                },
+                ChannelDescriptor {
+                    index: 1,
+                    speaker: ChannelMask::FrontRight,
+                    adm_track_audio_ids: vec![]
+                }
+            ],
+            x if x > 2 => {
+                let channel_mask = self.extended_format.map(|x| x.channel_mask).unwrap_or(0);
+                let channels = ChannelMask::channels(channel_mask, self.channel_count);
+                let channels_expanded = channels.iter().chain(std::iter::repeat(&ChannelMask::DirectOut));
+
+                (0..self.channel_count)
+                    .zip(channels_expanded)
+                    .map(|(n,chan)| ChannelDescriptor {
+                        index: n,
+                        speaker: *chan, 
+                        adm_track_audio_ids: vec![]
+                    }).collect()
+            },
+            x => panic!("Channel count ({}) was illegal!", x),
         }
     }
 }

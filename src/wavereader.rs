@@ -5,12 +5,12 @@ use super::parser::Parser;
 use super::fourcc::{FourCC, FMT__SIG,DATA_SIG, BEXT_SIG, JUNK_SIG, FLLR_SIG};
 use super::errors::Error as ParserError;
 use super::raw_chunk_reader::RawChunkReader;
-use super::fmt::WaveFmt;
+use super::fmt::{WaveFmt, ChannelDescriptor, ChannelMask};
 use super::bext::Bext;
 use super::audio_frame_reader::AudioFrameReader;
 use super::chunks::ReadBWaveChunks;
-//use super::validation;
-//use std::io::SeekFrom::{Start};
+
+
 use std::io::{Read, Seek};
 
 
@@ -131,6 +131,69 @@ impl<R: Read + Seek> WaveReader<R> {
     pub fn broadcast_extension(&mut self) -> Result<Bext, ParserError> {
         self.chunk_reader(BEXT_SIG, 0)?.read_bext()
     }
+
+    /// Describe the channels in this file
+    /// 
+    /// Returns a vector of channel descriptors, one for each channel
+    /// 
+    /// ```rust
+    /// # use bwavfile::WaveReader;
+    /// # use bwavfile::ChannelMask;
+    /// let mut f = WaveReader::open("tests/media/pt_24bit_51.wav").unwrap();
+    /// 
+    /// let chans = f.channels().unwrap();
+    /// assert_eq!(chans[0].index, 0);
+    /// assert_eq!(chans[0].speaker, ChannelMask::FrontLeft);
+    /// assert_eq!(chans[3].index, 3);
+    /// assert_eq!(chans[3].speaker, ChannelMask::LowFrequency);
+    /// assert_eq!(chans[4].speaker, ChannelMask::BackLeft);
+    /// ```
+    pub fn channels(&mut self) -> Result<Vec<ChannelDescriptor>, ParserError> {
+        
+        let format = self.format()?;
+        let channel_masks : Vec<ChannelMask> = match (format.channel_count, format.extended_format) {
+            (1,_) => vec![ChannelMask::FrontCenter],
+            (2,_) => vec![ChannelMask::FrontLeft, ChannelMask::FrontRight],
+            (n,Some(x)) => ChannelMask::channels(x.channel_mask, n),
+            (n,_) => vec![ChannelMask::DirectOut; n as usize]
+        };
+
+        Ok( (0..format.channel_count).zip(channel_masks)
+            .map(|(i,m)| ChannelDescriptor { index: i, speaker:m, adm_track_audio_ids: vec![] } )
+            .collect() )
+    }
+
+    /// Read iXML data.
+    /// 
+    /// If there are no iXML metadata present in the file, 
+    /// Err(Error::ChunkMissing { "iXML" } will be returned.
+    pub fn ixml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
+        let ixml_sig: FourCC = FourCC::make(b"iXML");
+        let mut chunk = self.chunk_reader(ixml_sig, 0)?;
+
+        match chunk.read_to_end(buffer) {
+            Ok(read) => Ok(read),
+            Err(error) => Err(error.into())
+        }
+    }
+
+    /// Read AXML data.
+    /// 
+    /// By convention this will generally be ADM metadata. 
+    /// 
+    /// If there are no iXML metadata present in the file, 
+    /// Err(Error::ChunkMissing { "axml" } will be returned. 
+    pub fn axml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
+        let axml_sig: FourCC = FourCC::make(b"axml");
+        let mut chunk = self.chunk_reader(axml_sig, 0)?;
+
+        match chunk.read_to_end(buffer) {
+            Ok(read) => Ok(read),
+            Err(error) => Err(error.into())
+        }
+    }
+
+
 
     /**
     * Validate file is readable.

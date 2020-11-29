@@ -2,6 +2,7 @@ extern crate bwavfile;
 
 use bwavfile::WaveReader;
 use bwavfile::Error;
+use bwavfile::{ ChannelMask}; 
 
 #[test]
 fn test_open() {
@@ -27,7 +28,7 @@ fn test_format_silence() -> Result<(),Error> {
 
     assert_eq!(format.sample_rate, 44100);
     assert_eq!(format.channel_count, 1);
-    assert_eq!(format.tag, 1);
+    assert_eq!(format.tag as u16, 1);
     Ok( () )
 }
 
@@ -74,4 +75,85 @@ fn test_minimal_wave()  {
     } else {
         assert!(true);
     }
+}
+
+#[test]
+fn test_read() {
+    let path = "tests/media/audacity_16bit.wav";
+
+    let mut w = WaveReader::open(path).expect("Failure opening test file");
+
+    let mut reader = w.audio_frame_reader().unwrap();
+
+    let mut buffer = reader.create_frame_buffer();
+
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], -2823_i32);
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], 2012_i32);
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], 4524_i32); 
+}
+
+#[test]
+fn test_locate_multichannel_read() {
+    let path = "tests/media/ff_pink.wav";
+
+    let mut w = WaveReader::open(path).expect("Failure opening test file");
+
+    let mut reader = w.audio_frame_reader().unwrap();
+
+    let mut buffer = reader.create_frame_buffer();
+
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], 332702_i32);
+    assert_eq!(buffer[1], 3258791_i32);
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], -258742_i32); // 0x800000 = 8388608 // 8129866 - 8388608
+    assert_eq!(buffer[1], 0x0D7EF9_i32);
+
+    assert_eq!(reader.locate(100).unwrap(), 100);
+    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], 0x109422_i32);
+    assert_eq!(buffer[1], -698901_i32); // 7689707 - 8388608
+}
+
+#[test]
+fn test_channels_stereo() {
+    let path = "tests/media/ff_pink.wav";
+
+    let mut w = WaveReader::open(path).expect("Failure opening test file");
+    let channels = w.channels().unwrap();
+
+    assert_eq!(channels.len(), 2);
+    assert_eq!(channels[0].index,0);
+    assert_eq!(channels[1].index,1);
+    assert_eq!(channels[0].speaker,ChannelMask::FrontLeft);
+    assert_eq!(channels[1].speaker,ChannelMask::FrontRight);
+}
+
+#[test]
+fn test_channels_mono_no_extended() {
+    let path = "tests/media/audacity_16bit.wav";
+
+    let mut w = WaveReader::open(path).expect("Failure opening test file");
+    let channels = w.channels().unwrap();
+
+    assert_eq!(channels.len(), 1);
+    assert_eq!(channels[0].index,0);
+    assert_eq!(channels[0].speaker,ChannelMask::FrontCenter);
+}
+
+#[test]
+fn test_channels_stereo_no_fmt_extended() {
+    let path = "tests/media/pt_24bit_stereo.wav";
+
+    let mut w = WaveReader::open(path).expect("Failure opening test file");
+    let channels = w.channels().unwrap();
+
+    assert_eq!(channels.len(), 2);
+    assert_eq!(channels[0].index,0);
+    assert_eq!(channels[1].index,1);
+    assert_eq!(channels[0].speaker,ChannelMask::FrontLeft);
+    assert_eq!(channels[1].speaker,ChannelMask::FrontRight);
 }

@@ -1,7 +1,5 @@
 use std::io::{Read, Write};
 
-use super::errors::Error as ParserError;
-
 use encoding::{DecoderTrap, EncoderTrap};
 use encoding::{Encoding};
 use encoding::all::ASCII;
@@ -9,7 +7,10 @@ use encoding::all::ASCII;
 use byteorder::LittleEndian;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
-use super::fmt::WaveFmt;
+use uuid::Uuid;
+
+use super::errors::Error as ParserError;
+use super::fmt::{WaveFmt, WaveFmtExtended};
 use super::bext::Bext;
 
 pub trait ReadBWaveChunks: Read {
@@ -26,7 +27,7 @@ pub trait WriteBWaveChunks: Write {
 
 impl<T> WriteBWaveChunks for T where T: Write {
     fn write_wave_fmt(&mut self, format : &WaveFmt) -> Result<(), ParserError> {
-        self.write_u16::<LittleEndian>(format.tag)?;
+        self.write_u16::<LittleEndian>(format.tag as u16 )?;
         self.write_u16::<LittleEndian>(format.channel_count)?;
         self.write_u32::<LittleEndian>(format.sample_rate)?;
         self.write_u32::<LittleEndian>(format.bytes_per_second)?;
@@ -86,14 +87,34 @@ impl<T> WriteBWaveChunks for T where T: Write {
 impl<T> ReadBWaveChunks for T where T: Read {
 
     fn read_wave_fmt(&mut self) -> Result<WaveFmt, ParserError> {
+        let tag_value : u16;
         Ok(WaveFmt {
-            tag:                self.read_u16::<LittleEndian>()?,
+            tag: {
+                tag_value = self.read_u16::<LittleEndian>()?;
+                tag_value
+            },
             channel_count:      self.read_u16::<LittleEndian>()?,
             sample_rate:        self.read_u32::<LittleEndian>()?,
             bytes_per_second:   self.read_u32::<LittleEndian>()?,
             block_alignment:    self.read_u16::<LittleEndian>()?,
             bits_per_sample:    self.read_u16::<LittleEndian>()?, 
-            extended_format: None
+            extended_format: {
+                if tag_value == 0xFFFE {
+                    let cb_size = self.read_u16::<LittleEndian>()?;
+                    assert!(cb_size >= 22, "Format extension is not correct size");
+                    Some(WaveFmtExtended {
+                        valid_bits_per_sample: self.read_u16::<LittleEndian>()?,
+                        channel_mask: self.read_u32::<LittleEndian>()?,
+                        type_guid: {
+                            let mut buf : [u8; 16] = [0; 16];
+                            self.read_exact(&mut buf)?;
+                            Uuid::from_slice(&buf)?
+                        }
+                    })
+                } else {
+                    None
+                }
+            }
         })
     }
 
@@ -143,11 +164,36 @@ impl<T> ReadBWaveChunks for T where T: Read {
                     if version > 1 { Some(val) } else { None }
                 }, 
                 coding_history: {
-                    for _ in 0..=180 { self.read_u8()?; }
+                    for _ in 0..180 { self.read_u8()?; }
                     let mut buf = vec![];
                     self.read_to_end(&mut buf)?;
                     ASCII.decode(&buf, DecoderTrap::Ignore).expect("Error decoding text")
                 }
         })
      }
+}
+
+#[test]
+fn test_read_51_wav() {
+    use super::fmt::ChannelMask;
+    use super::common_format::CommonFormat;
+
+    let path = "tests/media/pt_24bit_51.wav";
+
+    let mut w = super::wavereader::WaveReader::open(path).unwrap();
+    let format = w.format().unwrap();
+    assert_eq!(format.tag, 0xFFFE);
+    assert_eq!(format.channel_count, 6);
+    assert_eq!(format.sample_rate, 48000);
+    let extended = format.extended_format.unwrap();
+
+    assert_eq!(extended.valid_bits_per_sample, 24);
+
+    let channels = ChannelMask::channels(extended.channel_mask, format.channel_count);
+
+    assert_eq!(channels, [ChannelMask::FrontLeft, ChannelMask::FrontRight, 
+        ChannelMask::FrontCenter, ChannelMask::LowFrequency,
+        ChannelMask::BackLeft, ChannelMask::BackRight]);
+
+    assert_eq!(format.common_format(), CommonFormat::IntegerPCM);
 }
