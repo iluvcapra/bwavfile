@@ -7,6 +7,7 @@ use byteorder::ReadBytesExt;
 use super::fmt::{WaveFmt};
 use super::errors::Error;
 use super::CommonFormat;
+use super::raw_chunk_reader::RawChunkReader;
 
 /// Read audio frames
 /// 
@@ -14,12 +15,12 @@ use super::CommonFormat;
 /// bitstream having a format specified by `format`.
 /// 
 #[derive(Debug)]
-pub struct AudioFrameReader<R: Read + Seek> {
-    inner : R,
+pub struct AudioFrameReader<'a, R: Read + Seek> {
+    inner : RawChunkReader<'a,R>,
     format: WaveFmt
 }
 
-impl<R: Read + Seek> AudioFrameReader<R> {
+impl<'a, R: Read + Seek> AudioFrameReader<'a, R> {
 
     /// Create a new `AudioFrameReader`
     /// 
@@ -29,7 +30,7 @@ impl<R: Read + Seek> AudioFrameReader<R> {
     /// parameter to confirm the `block_alignment` law is fulfilled
     /// and the format tag is readable by this implementation (only
     /// format 0x01 is supported at this time.) 
-    pub fn new(inner: R, format: WaveFmt) -> Self {
+    pub fn new(inner: RawChunkReader<'a, R>, format: WaveFmt) -> Self {
         assert!(format.block_alignment * 8 == format.bits_per_sample * format.channel_count, 
             "Unable to read audio frames from packed formats: block alignment is {}, should be {}",
             format.block_alignment, (format.bits_per_sample / 8 ) * format.channel_count);

@@ -157,3 +157,20 @@ fn test_channels_stereo_no_fmt_extended() {
     assert_eq!(channels[0].speaker,ChannelMask::FrontLeft);
     assert_eq!(channels[1].speaker,ChannelMask::FrontRight);
 }
+
+// #[test]
+// fn test_sample_reader_type() {
+//     // Issue #6
+//     use bwavfile::WaveFmt;
+//     use bwavfile::AudioFrameReader;
+
+//     fn from_wav_filename(wav_filename: &str) -> Result<(WaveFmt, AudioFrameReader<std::fs::File>), ()> {
+//         if let Ok(mut r) = WaveReader::open(&wav_filename) {
+//             let format = r.format().unwrap();
+//             let frame_reader = r.audio_frame_reader().unwrap();
+//             Ok((format, frame_reader))
+//         } else {
+//             Err(())
+//         }
+//     }
+// }
