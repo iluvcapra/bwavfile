@@ -164,11 +164,11 @@ fn test_channels_stereo_no_fmt_extended() {
 //     use bwavfile::WaveFmt;
 //     use bwavfile::AudioFrameReader;
 
-//     fn from_wav_filename(wav_filename: &str) -> Result<(WaveFmt, AudioFrameReader<std::fs::File>), ()> {
+//     fn from_wav_filename<'a>(wav_filename: &str) -> Result<(WaveReader<std::fs::File>, WaveFmt, AudioFrameReader<'a, std::fs::File>), ()> {
 //         if let Ok(mut r) = WaveReader::open(&wav_filename) {
 //             let format = r.format().unwrap();
 //             let frame_reader = r.audio_frame_reader().unwrap();
-//             Ok((format, frame_reader))
+//             Ok((r, format, frame_reader))
 //         } else {
 //             Err(())
 //         }
