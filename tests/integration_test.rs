@@ -158,6 +158,8 @@ fn test_channels_stereo_no_fmt_extended() {
     assert_eq!(channels[1].speaker,ChannelMask::FrontRight);
 }
 
+// THis is me playing around trying to work on #6 and #7 
+//
 // #[test]
 // fn test_sample_reader_type() {
 //     // Issue #6
