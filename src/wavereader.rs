@@ -209,6 +209,8 @@ impl<R: Read + Seek> WaveReader<R> {
      * `Ok(())` if the source is `validate_readable()` AND
      * 
      *   - Contains _only_ a `fmt` chunk and `data` chunk, with no other chunks present
+     *   - `fmt` chunk is exactly 16 bytes long and begins _exactly_ at file offset 12
+     *   - `data` content begins _exactly_ at file offset 36
      *   - is not an RF64/BW64
      * 
      * Some clients require a WAVE file to only contain format and data without any other
@@ -237,7 +239,7 @@ impl<R: Read + Seek> WaveReader<R> {
             .into_chunk_list()?.iter().map(|c| c.signature ).collect();
 
         if chunk_fourccs == vec![FMT__SIG, DATA_SIG] {
-            Ok(())
+            Ok(()) /* FIXME: finish implementation */
         } else {
             Err( ParserError::NotMinimalWaveFile )
         }
