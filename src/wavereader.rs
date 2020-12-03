@@ -166,7 +166,7 @@ impl<R: Read + Seek> WaveReader<R> {
     /// Read iXML data.
     /// 
     /// If there are no iXML metadata present in the file, 
-    /// Err(Error::ChunkMissing { "iXML" } will be returned.
+    /// Ok(0) will be returned.
     pub fn read_ixml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
         let ixml_fourcc = FourCC::make(b"iXML");
         self.read_chunk(ixml_fourcc, 0, buffer) 
@@ -176,7 +176,7 @@ impl<R: Read + Seek> WaveReader<R> {
     /// 
     /// By convention this will generally be ADM metadata. 
     /// 
-    /// If there are no iXML metadata present in the file, 
+    /// If there are no axml metadata present in the file, 
     /// Ok(0) will be returned
     pub fn read_axml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
         let axml_fourcc = FourCC::make(b"axml");
