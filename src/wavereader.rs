@@ -167,14 +167,9 @@ impl<R: Read + Seek> WaveReader<R> {
     /// 
     /// If there are no iXML metadata present in the file, 
     /// Err(Error::ChunkMissing { "iXML" } will be returned.
-    pub fn ixml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
-        let ixml_sig: FourCC = FourCC::make(b"iXML");
-        let mut chunk = self.chunk_reader(ixml_sig, 0)?;
-
-        match chunk.read_to_end(buffer) {
-            Ok(read) => Ok(read),
-            Err(error) => Err(error.into())
-        }
+    pub fn read_ixml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
+        let ixml_fourcc = FourCC::make(b"iXML");
+        self.read_chunk(ixml_fourcc, 0, buffer) 
     }
 
     /// Read AXML data.
@@ -182,17 +177,11 @@ impl<R: Read + Seek> WaveReader<R> {
     /// By convention this will generally be ADM metadata. 
     /// 
     /// If there are no iXML metadata present in the file, 
-    /// Err(Error::ChunkMissing { "axml" } will be returned. 
-    pub fn axml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
-        let axml_sig: FourCC = FourCC::make(b"axml");
-        let mut chunk = self.chunk_reader(axml_sig, 0)?;
-
-        match chunk.read_to_end(buffer) {
-            Ok(read) => Ok(read),
-            Err(error) => Err(error.into())
-        }
+    /// Ok(0) will be returned
+    pub fn read_axml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
+        let axml_fourcc = FourCC::make(b"axml");
+        self.read_chunk(axml_fourcc, 0, buffer)
     }
-
 
 
     /**
@@ -338,6 +327,21 @@ impl<R:Read+Seek> WaveReader<R> { /* Private Implementation */
         let (start, length) = self.get_chunk_extent_at_index(signature, at_index)?;
         Ok( RawChunkReader::new(&mut self.inner, start, length) )
     } 
+
+    fn read_chunk(&mut self, ident: FourCC, at: u32, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
+        let result = self.chunk_reader(ident, at);
+
+        match result {
+            Ok(mut chunk) => {
+                match chunk.read_to_end(buffer) {
+                    Ok(read) => Ok(read),
+                    Err(err) => Err(err.into())
+                }
+            },
+            Err(ParserError::ChunkMissing { signature : _} ) => Ok(0),
+            Err( any ) => Err(any.into())
+        }
+    }
 
     fn get_chunk_extent_at_index(&mut self, fourcc: FourCC, index: u32) -> Result<(u64,u64), ParserError> {
         let p = Parser::make(&mut self.inner)?.into_chunk_list()?;
