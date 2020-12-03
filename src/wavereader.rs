@@ -100,13 +100,13 @@ impl<R: Read + Seek> WaveReader<R> {
         return self.inner;
     }
 
-    /**
-     * Create an `AudioFrameReader` for reading each audio frame.
-    */
-    pub fn audio_frame_reader(&mut self) -> Result<AudioFrameReader<R>, ParserError> {
+    ///
+    /// Create an `AudioFrameReader` for reading each audio frame and consume the `WaveReader`.
+    ///
+    pub fn audio_frame_reader(mut self) -> Result<AudioFrameReader<R>, ParserError> {
         let format = self.format()?;
-        let audio_chunk_reader = self.chunk_reader(DATA_SIG, 0)?;
-        Ok(AudioFrameReader::new(audio_chunk_reader, format))
+        let audio_chunk_reader = self.get_chunk_extent_at_index(DATA_SIG, 0)?;
+        Ok(AudioFrameReader::new(self.inner, format, audio_chunk_reader.0, audio_chunk_reader.1)?)
     }
 
     /**

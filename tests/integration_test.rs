@@ -81,7 +81,7 @@ fn test_minimal_wave()  {
 fn test_read() {
     let path = "tests/media/audacity_16bit.wav";
 
-    let mut w = WaveReader::open(path).expect("Failure opening test file");
+    let w = WaveReader::open(path).expect("Failure opening test file");
 
     let mut reader = w.audio_frame_reader().unwrap();
 
@@ -99,7 +99,7 @@ fn test_read() {
 fn test_locate_multichannel_read() {
     let path = "tests/media/ff_pink.wav";
 
-    let mut w = WaveReader::open(path).expect("Failure opening test file");
+    let w = WaveReader::open(path).expect("Failure opening test file");
 
     let mut reader = w.audio_frame_reader().unwrap();
 
@@ -158,21 +158,22 @@ fn test_channels_stereo_no_fmt_extended() {
     assert_eq!(channels[1].speaker,ChannelMask::FrontRight);
 }
 
-// THis is me playing around trying to work on #6 and #7 
-//
-// #[test]
-// fn test_sample_reader_type() {
-//     // Issue #6
-//     use bwavfile::WaveFmt;
-//     use bwavfile::AudioFrameReader;
+//See issue 6 and 7
+#[test]
+fn test_frame_reader_consumes_reader() {
+    // Issue #6
+    use bwavfile::WaveFmt;
+    use bwavfile::AudioFrameReader;
+    use std::fs::File;
+    fn from_wav_filename(wav_filename: &str) -> Result<(WaveFmt, AudioFrameReader<File>), ()> {
+        if let Ok(mut r) = WaveReader::open(&wav_filename) {
+            let format = r.format().unwrap();
+            let frame_reader = r.audio_frame_reader().unwrap();
+            Ok((format, frame_reader))
+        } else {
+            Err(())
+        }
+    }
 
-//     fn from_wav_filename<'a>(wav_filename: &str) -> Result<(WaveReader<std::fs::File>, WaveFmt, AudioFrameReader<'a, std::fs::File>), ()> {
-//         if let Ok(mut r) = WaveReader::open(&wav_filename) {
-//             let format = r.format().unwrap();
-//             let frame_reader = r.audio_frame_reader().unwrap();
-//             Ok((r, format, frame_reader))
-//         } else {
-//             Err(())
-//         }
-//     }
-// }
+    let _result = from_wav_filename("tests/media/pt_24bit_stereo.wav").unwrap();
+}
