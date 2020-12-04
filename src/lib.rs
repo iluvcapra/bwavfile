@@ -66,7 +66,8 @@ Things that are _not_ necessarily in the scope of this package:
 
 
 ### Other resources
-- [RFC 3261][rfc3261] (June 1998) "WAVE and AVI Codec Registries" 
+- [RFC 3261][rfc3261] (June 1998) "WAVE and AVI Codec Registries"
+- [Sampler Metadata](http://www.piclist.com/techref/io/serial/midi/wave.html)
 - [Peter Kabal, McGill University](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html)
  - [Multimedia Programming Interface and Data Specifications 1.0](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf) 
     (August 1991), IBM Corporation and Microsoft Corporation
