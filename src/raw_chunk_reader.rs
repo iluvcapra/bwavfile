@@ -9,8 +9,8 @@ use std::io::{Seek,Read,Error,ErrorKind};
 #[derive(Debug)]
 pub struct RawChunkReader<'a, R: Read + Seek> {
     reader: &'a mut R,
-    start: u64,
-    length: u64,
+    pub start: u64,
+    pub length: u64,
     position: u64
 }
 
@@ -23,10 +23,6 @@ impl<'a,R: Read + Seek> RawChunkReader<'a, R> {
             position: 0
         }
     }
-
-    pub fn length(&self) -> u64 {
-        self.length
-    } 
 }
 
 impl<'a, R:Read + Seek> Read for RawChunkReader<'_, R> {
