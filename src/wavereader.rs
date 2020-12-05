@@ -10,7 +10,7 @@ use super::bext::Bext;
 use super::audio_frame_reader::AudioFrameReader;
 use super::chunks::ReadBWaveChunks;
 
-
+use std::io::Cursor;
 use std::io::{Read, Seek};
 
 
@@ -118,18 +118,26 @@ impl<R: Read + Seek> WaveReader<R> {
         Ok( data_length / (format.block_alignment as u64) )
     } 
 
-    /**
-     * Sample and frame format of this wave file.
-     */
+    
+    /// Sample and frame format of this wave file.
+    ///
     pub fn format(&mut self) -> Result<WaveFmt, ParserError> {
         self.chunk_reader(FMT__SIG, 0)?.read_wave_fmt()
     }
 
-    /**
-     * The Broadcast-WAV metadata record for this file.
-     */
-    pub fn broadcast_extension(&mut self) -> Result<Bext, ParserError> {
-        self.chunk_reader(BEXT_SIG, 0)?.read_bext()
+    ///
+    /// The Broadcast-WAV metadata record for this file, if present.
+    /// 
+    pub fn broadcast_extension(&mut self) -> Result<Option<Bext>, ParserError> {
+        let mut bext_buff : Vec<u8> = vec![ ];
+        let result = self.read_chunk(BEXT_SIG, 0, &mut bext_buff)?;
+        if result > 0 {
+            let mut bext_cursor = Cursor::new(bext_buff);
+            Ok( Some( bext_cursor.read_bext()? ) )
+        } else {
+            Ok( None)
+        }
+
     }
 
     /// Describe the channels in this file
