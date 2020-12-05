@@ -12,7 +12,7 @@ This is currently a work-in-progress! However many features presently work:
 
 - [x] Read standard WAV, Broadcast-Wave, and 64-bit RF64 and BW64 wave files with one interface for 
   all types with transparent format detection.
-- [ ] Wave/RF64 file writing with transparent promotion from WAV to Broadcast-WAV.
+- [ ] Wave/RF64 file writing with transparent promotion from WAV to RF64.
 - [x] Unified format definition interface for standard and extended-format wave files.
 - [x] Read channel/speaker map metadata.
 - [x] iXML and ADM XML metadata.
