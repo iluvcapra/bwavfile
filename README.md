@@ -19,7 +19,7 @@ This is currently a work-in-progress! However many features presently work:
 - [x] iXML and ADM XML metadata.
 - [ ] Broadcast-WAV Level and Quality metadata.
 - [ ] Cue list, label, and labeled text metadata.
-- [ ] Sampler metadata.
+- [ ] Sampler and instrument metadata.
 - [x] Validate the compatibility of a given wave file for certain regimes.
 - [x] Metadata support for ambisonic B-format.
 
