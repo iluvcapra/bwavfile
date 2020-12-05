@@ -15,10 +15,11 @@ This is currently a work-in-progress! However many features presently work:
 - [ ] Wave/RF64 file writing with transparent promotion from WAV to RF64.
 - [x] Unified format definition interface for standard and extended-format wave files.
 - [x] Read channel/speaker map metadata.
+- [x] Read standard EBU Broadcast-Wave metadata and decode to fields, including timestamp and SMPTE UMID.
 - [x] iXML and ADM XML metadata.
 - [ ] Broadcast-WAV Level and Quality metadata.
 - [ ] Cue list, label, and labeled text metadata.
-- [x] Read standard EBU Broadcast-Wave metadata and decode to fields, including timestamp and SMPTE UMID.
+- [ ] Sampler metadata.
 - [x] Validate the compatibility of a given wave file for certain regimes.
 - [x] Metadata support for ambisonic B-format.
 
