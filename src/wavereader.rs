@@ -165,6 +165,7 @@ impl<R: Read + Seek> WaveReader<R> {
 
     /// Read iXML data.
     /// 
+    /// The iXML data will be appended to `buffer`.
     /// If there are no iXML metadata present in the file, 
     /// Ok(0) will be returned.
     pub fn read_ixml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
@@ -174,7 +175,8 @@ impl<R: Read + Seek> WaveReader<R> {
 
     /// Read AXML data.
     /// 
-    /// By convention this will generally be ADM metadata. 
+    /// The axml data will be appended to `buffer`. By convention this will 
+    /// generally be ADM metadata.
     /// 
     /// If there are no axml metadata present in the file, 
     /// Ok(0) will be returned
