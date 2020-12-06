@@ -46,6 +46,21 @@ This is currently a work-in-progress! However many features presently work:
  assert_eq!(read, 1);
 ```
 
+### Accessing Channel Descriptions
+
+```rust
+ use bwavfile::{WaveReader, ChannelMask};
+ 
+ let mut f = WaveReader::open("tests/media/pt_24bit_51.wav").unwrap();
+    
+ let chans = f.channels().unwrap();
+ assert_eq!(chans[0].index, 0);
+ assert_eq!(chans[0].speaker, ChannelMask::FrontLeft);
+ assert_eq!(chans[3].index, 3);
+ assert_eq!(chans[3].speaker, ChannelMask::LowFrequency);
+ assert_eq!(chans[4].speaker, ChannelMask::BackLeft);
+```
+
 ## Note on Testing
 
 All of the media for the integration tests is committed to the respository
