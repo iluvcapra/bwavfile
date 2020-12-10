@@ -46,15 +46,14 @@ impl RawLabel {
     fn read_from(data : &[u8]) -> Result<Self, Error> {
         let mut rdr = Cursor::new(data);
         let length = data.len();
-
+        
         Ok( Self {
             cue_point_id : rdr.read_u32::<LittleEndian>()?,
             text : {
                 let mut buf = vec![0u8; (length - 4) as usize ];
                 rdr.read_exact(&mut buf)?;
-                if buf.len() % 2 == 1 { rdr.read_u8()?; };
+                //if buf.len() % 2 == 1 { rdr.read_u8()?; };
                 buf
-               // String::from_utf8(buf).unwrap_or(String::from("<TEXT ENCODING ERROR>"))
             }
         })
     }
@@ -76,9 +75,8 @@ impl RawNote {
             text : {
                 let mut buf = vec![0u8; (length - 4) as usize ];
                 rdr.read_exact(&mut buf)?;
-                if length % 2 == 1 { rdr.read_u8()?; };
+                //if length % 2 == 1 { rdr.read_u8()?; };
                 buf
-                //String::from_utf8(buf).unwrap_or(String::from("<TEXT ENCODING ERROR>"))
             }
         })
     }
@@ -113,7 +111,7 @@ impl RawLtxt {
                 if length - 20 > 0 {
                     let mut buf = vec![0u8; (length - 20) as usize];
                     rdr.read_exact(&mut buf)?;
-                    if length % 2 == 1 { rdr.read_u8()?; };
+                    //if length % 2 == 1 { rdr.read_u8()?; };
                     Some( buf )
                     //Some( String::from_utf8(buf).unwrap_or(String::from("<TEXT ENCODING ERROR>")) )
                 } else {
@@ -223,6 +221,7 @@ impl Cue {
         } else {
             raw_adtl = vec![];
         }
+        
 
         Ok( 
             raw_cues.iter()

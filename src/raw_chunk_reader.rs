@@ -28,7 +28,7 @@ impl<'a,R: Read + Seek> RawChunkReader<'a, R> {
 impl<'a, R:Read + Seek> Read for RawChunkReader<'_, R> {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> { 
         if self.position >= self.length {
-            Err(Error::new(ErrorKind::UnexpectedEof, "RawChunkReader encountered end-of-file"))
+            Ok(0)
         } else {
             self.reader.seek(Start(self.start + self.position))?;
             let to_read = min(self.length - self.position, buf.len() as u64);

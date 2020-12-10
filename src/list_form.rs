@@ -21,11 +21,20 @@ pub fn collect_list_form(list_contents :& [u8]) -> Result<Vec<ListFormItem>, Err
     while remain > 0 {
         let this_sig = cursor.read_fourcc()?;
         let this_size = cursor.read_u32::<LittleEndian>()? as usize;
+        remain -= 8;
         let mut content_buf = vec![0u8; this_size];
-
         cursor.read_exact(&mut content_buf)?;
+        remain -= this_size;
+        
         retval.push( ListFormItem { signature : this_sig, contents : content_buf } );
+        
+        if this_size % 2 == 1 {
+            cursor.read_u8()?;
+            //panic!("Got this far!");
+            remain -= 1;
+        }
     }
+    
 
     Ok( retval )
 }

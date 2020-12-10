@@ -2,7 +2,7 @@
 use std::fs::File;
 
 use super::parser::Parser;
-use super::fourcc::{FourCC, FMT__SIG,DATA_SIG, BEXT_SIG, JUNK_SIG, FLLR_SIG, CUE__SIG, ADTL_SIG};
+use super::fourcc::{FourCC, ReadFourCC, FMT__SIG,DATA_SIG, BEXT_SIG, LIST_SIG, JUNK_SIG, FLLR_SIG, CUE__SIG, ADTL_SIG};
 use super::errors::Error as ParserError;
 use super::raw_chunk_reader::RawChunkReader;
 use super::fmt::{WaveFmt, ChannelDescriptor, ChannelMask};
@@ -146,8 +146,9 @@ impl<R: Read + Seek> WaveReader<R> {
     /// Returns a vector of channel descriptors, one for each channel
     /// 
     /// ```rust
-    /// # use bwavfile::WaveReader;
-    /// # use bwavfile::ChannelMask;
+    /// use bwavfile::WaveReader;
+    /// use bwavfile::ChannelMask;
+    ///
     /// let mut f = WaveReader::open("tests/media/pt_24bit_51.wav").unwrap();
     /// 
     /// let chans = f.channels().unwrap();
@@ -174,20 +175,36 @@ impl<R: Read + Seek> WaveReader<R> {
 
     /// Read cue points.
     /// 
+    /// ```rust
+    /// use bwavfile::WaveReader;
+    /// use bwavfile::Cue;
     /// 
+    /// let mut f = WaveReader::open("tests/media/izotope_test.wav").unwrap();
+    /// let cue_points = f.cue_points().unwrap();
+    /// 
+    /// assert_eq!(cue_points.len(), 3);
+    /// assert_eq!(cue_points[0].ident, 1);
+    /// assert_eq!(cue_points[0].frame, 12532);
+    /// //assert_eq!(cue_points[0].label, Some(String::from("Marker 1")));
+    /// 
+    /// assert_eq!(cue_points[1].ident, 2);
+    /// assert_eq!(cue_points[1].frame, 20997);
+    /// 
+    /// assert_eq!(cue_points[2].ident, 3);
+    /// assert_eq!(cue_points[2].frame, 26711);
+    /// ```
     pub fn cue_points(&mut self) -> Result<Vec<Cue>,ParserError> {
         let mut cue_buffer : Vec<u8> = vec![];
         let mut adtl_buffer : Vec<u8> = vec![];
 
         let cue_read = self.read_chunk(CUE__SIG, 0, &mut cue_buffer)?;
-        let adtl_read = self.read_chunk(ADTL_SIG, 0, &mut adtl_buffer)?;
+        let adtl_read = self.read_list(ADTL_SIG, &mut adtl_buffer)?;
 
         match (cue_read, adtl_read) {
             (0,_) => Ok( vec![] ),
             (_,0) => Ok( Cue::collect_from(&cue_buffer, None)? ),
             (_,_) => Ok( Cue::collect_from(&cue_buffer, Some(&adtl_buffer) )? )
         }
-
     }
 
     /// Read iXML data.
@@ -352,12 +369,25 @@ impl<R: Read + Seek> WaveReader<R> {
     }
 }
 
-impl<R:Read+Seek> WaveReader<R> { /* Private Implementation */
+impl<R:Read+Seek> WaveReader<R> {
+
+    // Private implementation
+    //
+    // As time passes thi get smore obnoxious because I haven't implemented recursive chunk 
+    // parsing in the raw parser and I'm working around it
 
     fn chunk_reader(&mut self, signature: FourCC, at_index: u32) -> Result<RawChunkReader<R>, ParserError> {
         let (start, length) = self.get_chunk_extent_at_index(signature, at_index)?;
         Ok( RawChunkReader::new(&mut self.inner, start, length) )
     } 
+
+    fn read_list(&mut self, ident: FourCC, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
+        if let Some(index) = self.get_list_form(ident)? {
+            self.read_chunk(LIST_SIG, index, buffer)
+        } else {
+            Ok( 0 )
+        }
+    }
 
     fn read_chunk(&mut self, ident: FourCC, at: u32, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
         let result = self.chunk_reader(ident, at);
@@ -374,14 +404,43 @@ impl<R:Read+Seek> WaveReader<R> { /* Private Implementation */
         }
     }
 
-    fn get_chunk_extent_at_index(&mut self, fourcc: FourCC, index: u32) -> Result<(u64,u64), ParserError> {
+    /// Extent of every chunk with the given fourcc
+    fn get_chunks_extents(&mut self, fourcc: FourCC) -> Result<Vec<(u64,u64)>, ParserError> {
         let p = Parser::make(&mut self.inner)?.into_chunk_list()?;
 
-        if let Some(chunk) = p.iter().filter(|item| item.signature == fourcc).nth(index as usize) {
-            Ok ((chunk.start, chunk.length))
+        Ok( p.iter().filter(|item| item.signature == fourcc)
+            .map(|item| (item.start, item.length)).collect() )
+    }
+
+    /// Index of first LIST for with the given FORM fourcc
+    fn get_list_form(&mut self, fourcc: FourCC) -> Result<Option<u32>, ParserError> {
+        for (n, (start, length)) in self.get_chunks_extents(LIST_SIG)?.iter().enumerate() {
+            let mut reader = RawChunkReader::new(&mut self.inner, *start, *length);
+            let this_fourcc = reader.read_fourcc()?;
+            if this_fourcc == fourcc {
+                return Ok( Some( n as u32 ) );
+            }
+        }
+
+        Ok( None )
+    }
+
+    fn get_chunk_extent_at_index(&mut self, fourcc: FourCC, index: u32) -> Result<(u64,u64), ParserError> {
+        if let Some((start, length)) = self.get_chunks_extents(fourcc)?.iter().nth(index as usize) {
+            Ok ((*start, *length))
         } else {
-            Err( ParserError::ChunkMissing { signature : fourcc })
+            Err( ParserError::ChunkMissing { signature : fourcc } )
         }
     }
 }
 
+#[test]
+fn test_list_form() {
+    let mut f = WaveReader::open("tests/media/izotope_test.wav").unwrap();
+    let mut buf : Vec<u8> = vec![];
+    
+    f.read_list(ADTL_SIG, &mut buf).unwrap();
+
+    assert_ne!(buf.len(),  0);
+
+}

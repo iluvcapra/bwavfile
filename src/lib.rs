@@ -15,6 +15,7 @@ production.
 
 Apps we test against:
 - Avid Pro Tools
+- iZotope RX Audio Editor
 - FFMpeg
 - Audacity
 
@@ -130,3 +131,4 @@ pub use bext::Bext;
 pub use fmt::{WaveFmt, WaveFmtExtended, ChannelDescriptor, ChannelMask};
 pub use common_format::CommonFormat;
 pub use audio_frame_reader::AudioFrameReader;
+pub use cue::Cue;
