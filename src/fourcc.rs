@@ -106,6 +106,13 @@ pub const BEXT_SIG: FourCC = FourCC::make(b"bext");
 pub const JUNK_SIG: FourCC = FourCC::make(b"JUNK");
 pub const FLLR_SIG: FourCC = FourCC::make(b"FLLR");
 
+pub const CUE__SIG: FourCC = FourCC::make(b"cue ");
+pub const ADTL_SIG: FourCC = FourCC::make(b"adtl");
+pub const LABL_SIG: FourCC = FourCC::make(b"labl");
+pub const NOTE_SIG: FourCC = FourCC::make(b"note");
+pub const LTXT_SIG: FourCC = FourCC::make(b"ltxt");
+
+
 #[cfg(test)]
 mod tests {
     use super::*;

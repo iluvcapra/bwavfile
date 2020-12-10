@@ -1,0 +1,5 @@
+Marker file version: 1
+Time format: Time
+Marker 1	00:00:00.28417234		Marker 1 Comment
+Marker 2	00:00:00.47612245		Marker 2 Comment
+Timed Region	00:00:00.60569161	00:00:00.75226757	Region Comment

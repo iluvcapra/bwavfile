@@ -113,7 +113,10 @@ mod parser;
 
 mod raw_chunk_reader;
 mod audio_frame_reader;
+mod list_form;
+
 mod chunks;
+mod cue;
 mod bext;
 mod fmt;
 

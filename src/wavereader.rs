@@ -2,13 +2,14 @@
 use std::fs::File;
 
 use super::parser::Parser;
-use super::fourcc::{FourCC, FMT__SIG,DATA_SIG, BEXT_SIG, JUNK_SIG, FLLR_SIG};
+use super::fourcc::{FourCC, FMT__SIG,DATA_SIG, BEXT_SIG, JUNK_SIG, FLLR_SIG, CUE__SIG, ADTL_SIG};
 use super::errors::Error as ParserError;
 use super::raw_chunk_reader::RawChunkReader;
 use super::fmt::{WaveFmt, ChannelDescriptor, ChannelMask};
 use super::bext::Bext;
 use super::audio_frame_reader::AudioFrameReader;
 use super::chunks::ReadBWaveChunks;
+use super::cue::Cue;
 
 use std::io::Cursor;
 use std::io::{Read, Seek};
@@ -169,6 +170,24 @@ impl<R: Read + Seek> WaveReader<R> {
         Ok( (0..format.channel_count).zip(channel_masks)
             .map(|(i,m)| ChannelDescriptor { index: i, speaker:m, adm_track_audio_ids: vec![] } )
             .collect() )
+    }
+
+    /// Read cue points.
+    /// 
+    /// 
+    pub fn cue_points(&mut self) -> Result<Vec<Cue>,ParserError> {
+        let mut cue_buffer : Vec<u8> = vec![];
+        let mut adtl_buffer : Vec<u8> = vec![];
+
+        let cue_read = self.read_chunk(CUE__SIG, 0, &mut cue_buffer)?;
+        let adtl_read = self.read_chunk(ADTL_SIG, 0, &mut adtl_buffer)?;
+
+        match (cue_read, adtl_read) {
+            (0,_) => Ok( vec![] ),
+            (_,0) => Ok( Cue::collect_from(&cue_buffer, None)? ),
+            (_,_) => Ok( Cue::collect_from(&cue_buffer, Some(&adtl_buffer) )? )
+        }
+
     }
 
     /// Read iXML data.
