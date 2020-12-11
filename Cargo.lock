@@ -2,7 +2,7 @@
 # It is not intended for manual editing.
 [[package]]
 name = "bwavfile"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "byteorder",
  "encoding",

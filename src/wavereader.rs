@@ -185,13 +185,22 @@ impl<R: Read + Seek> WaveReader<R> {
     /// assert_eq!(cue_points.len(), 3);
     /// assert_eq!(cue_points[0].ident, 1);
     /// assert_eq!(cue_points[0].frame, 12532);
-    /// //assert_eq!(cue_points[0].label, Some(String::from("Marker 1")));
+    /// assert_eq!(cue_points[0].length, None);
+    /// assert_eq!(cue_points[0].label, Some(String::from("Marker 1")));
+    /// assert_eq!(cue_points[0].note, Some(String::from("Marker 1 Comment")));
     /// 
     /// assert_eq!(cue_points[1].ident, 2);
     /// assert_eq!(cue_points[1].frame, 20997);
+    /// assert_eq!(cue_points[1].length, None);
+    /// assert_eq!(cue_points[1].label, Some(String::from("Marker 2")));
+    /// assert_eq!(cue_points[1].note, Some(String::from("Marker 2 Comment"))); 
     /// 
     /// assert_eq!(cue_points[2].ident, 3);
     /// assert_eq!(cue_points[2].frame, 26711);
+    /// assert_eq!(cue_points[2].length, Some(6465));
+    /// assert_eq!(cue_points[2].label, Some(String::from("Timed Region")));
+    /// assert_eq!(cue_points[2].note, Some(String::from("Region Comment"))); 
+    /// 
     /// ```
     pub fn cue_points(&mut self) -> Result<Vec<Cue>,ParserError> {
         let mut cue_buffer : Vec<u8> = vec![];

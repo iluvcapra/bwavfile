@@ -1,9 +1,13 @@
 use super::fourcc::{FourCC,ReadFourCC, LABL_SIG, NOTE_SIG, LTXT_SIG};
 use super::list_form::collect_list_form;
+
 use byteorder::{ReadBytesExt, LittleEndian};
 
+use encoding::{DecoderTrap};
+use encoding::{Encoding};
+use encoding::all::ASCII;
+
 use std::io::{Cursor, Error, Read};
-use std::str;
 
 #[derive(Copy,Clone, Debug)]
 struct RawCue {
@@ -46,13 +50,12 @@ impl RawLabel {
     fn read_from(data : &[u8]) -> Result<Self, Error> {
         let mut rdr = Cursor::new(data);
         let length = data.len();
-        
+
         Ok( Self {
             cue_point_id : rdr.read_u32::<LittleEndian>()?,
             text : {
                 let mut buf = vec![0u8; (length - 4) as usize ];
                 rdr.read_exact(&mut buf)?;
-                //if buf.len() % 2 == 1 { rdr.read_u8()?; };
                 buf
             }
         })
@@ -75,7 +78,6 @@ impl RawNote {
             text : {
                 let mut buf = vec![0u8; (length - 4) as usize ];
                 rdr.read_exact(&mut buf)?;
-                //if length % 2 == 1 { rdr.read_u8()?; };
                 buf
             }
         })
@@ -111,9 +113,7 @@ impl RawLtxt {
                 if length - 20 > 0 {
                     let mut buf = vec![0u8; (length - 20) as usize];
                     rdr.read_exact(&mut buf)?;
-                    //if length % 2 == 1 { rdr.read_u8()?; };
                     Some( buf )
-                    //Some( String::from_utf8(buf).unwrap_or(String::from("<TEXT ENCODING ERROR>")) )
                 } else {
                     None
                 }
@@ -210,6 +210,11 @@ pub struct Cue {
 }
 
 
+fn convert_to_cue_string(buffer : &[u8]) -> String {
+    let trimmed : Vec<u8> = buffer.iter().take_while(|c| **c != 0 as u8).cloned().collect();
+    ASCII.decode(&trimmed, DecoderTrap::Ignore).expect("Error decoding text")
+}
+
 impl Cue {
 
     pub fn collect_from(cue_chunk : &[u8], adtl_chunk : Option<&[u8]>) -> Result<Vec<Cue>, Error> {
@@ -230,18 +235,19 @@ impl Cue {
                     ident : i.cue_point_id,
                     frame : i.frame,
                     length: {
-                        raw_adtl.ltxt_for_cue_point(i.cue_point_id).first().map(|x| x.frame_length)
+                        raw_adtl.ltxt_for_cue_point(i.cue_point_id).first()
+                        .filter(|x| x.purpose == FourCC::make(b"rgn "))
+                        .map(|x| x.frame_length)
                     },
                     label: {
                         raw_adtl.labels_for_cue_point(i.cue_point_id).iter()
-                            .filter_map(|x| str::from_utf8(&x.text).ok())
-                            .map(|s| String::from(s))
+                            .map(|s| convert_to_cue_string(&s.text))
                             .next()
                     },
                     note : {
                         raw_adtl.notes_for_cue_point(i.cue_point_id).iter()
-                            .filter_map(|x| str::from_utf8(&x.text).ok())
-                            .map(|s| String::from(s))
+                            //.filter_map(|x| str::from_utf8(&x.text).ok())
+                            .map(|s| convert_to_cue_string(&s.text))
                             .next()
                     }
                 }
