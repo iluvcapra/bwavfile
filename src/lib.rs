@@ -85,7 +85,7 @@ Things that are _not_ necessarily in the scope of this package:
   - [Supplement 6](https://tech.ebu.ch/docs/tech/tech3285s6.pdf) (October 2009): Dolby Metadata 
 - [EBU Tech R099](https://tech.ebu.ch/docs/r/r099.pdf) (October 2011) "‘Unique’ Source Identifier (USID) for use in the 
   <OriginatorReference> field of the Broadcast Wave Format"
-- [EBU Tech R098](https://tech.ebu.ch/docs/r/r098.pdf) (1999) "Format for the <CodingHistory> field in Broadcast Wave Format files, BWF"
+- [EBU Tech R098](https://tech.ebu.ch/docs/r/r098.pdf) (1999) "Format for the &lt;CodingHistory&gt; field in Broadcast Wave Format files, BWF"
 
 [ebu3285]: https://tech.ebu.ch/docs/tech/tech3285.pdf
 [ebu3306v1]: https://tech.ebu.ch/docs/tech/tech3306v1_1.pdf
