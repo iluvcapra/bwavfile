@@ -3,20 +3,20 @@ use super::common_format::CommonFormat;
 
 #[allow(dead_code)]
 
-/// ADM Audio ID record
+/// ADM Audio ID record.
 /// 
 /// This structure relates a channel in the wave file to either a common ADM
 /// channel definition or further definition in the WAV file's ADM metadata 
 /// chunk.
 /// 
 /// An individual channel in a WAV file can have multiple Audio IDs in an ADM 
-/// AudioProgramme.
+/// `AudioProgramme`.
 /// 
 /// See BS.2088-1 § 8, also BS.2094, also blahblahblah...
 pub struct ADMAudioID {
-    track_uid: [char; 12],
-    channel_format_ref: [char; 14],
-    pack_ref: [char; 11]
+    pub track_uid: [char; 12],
+    pub channel_format_ref: [char; 14],
+    pub pack_ref: [char; 11]
 }
 
 /// Describes a single channel in a WAV file.
@@ -35,13 +35,9 @@ pub struct ChannelDescriptor {
 }
 
 
-
-/*
-https://docs.microsoft.com/en-us/windows-hardware/drivers/audio/subformat-guids-for-compressed-audio-formats
-
-These are from http://dream.cs.bath.ac.uk/researchdev/wave-ex/mulchaud.rtf
-*/
-
+/// A bitmask indicating which channels are present in 
+/// the file.
+/// 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChannelMask {
     DirectOut        = 0x0,
