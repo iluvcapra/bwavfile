@@ -12,7 +12,7 @@ use super::chunks::ReadBWaveChunks;
 use super::cue::Cue;
 
 use std::io::Cursor;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 
 /**
@@ -385,10 +385,10 @@ impl<R:Read+Seek> WaveReader<R> {
     // As time passes thi get smore obnoxious because I haven't implemented recursive chunk 
     // parsing in the raw parser and I'm working around it
 
-    // fn chunk_reader(&mut self, signature: FourCC, at_index: u32) -> Result<RawChunkReader<R>, ParserError> {
-    //     let (start, length) = self.get_chunk_extent_at_index(signature, at_index)?;
-    //     Ok( RawChunkReader::new(&mut self.inner, start, length) )
-    // } 
+    fn chunk_reader(&mut self, signature: FourCC, at_index: u32) -> Result<RawChunkReader<R>, ParserError> {
+        let (start, length) = self.get_chunk_extent_at_index(signature, at_index)?;
+        Ok( RawChunkReader::new(&mut self.inner, start, length) )
+    } 
 
     fn read_list(&mut self, ident: FourCC, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
         if let Some(index) = self.get_list_form(ident)? {
@@ -399,11 +399,18 @@ impl<R:Read+Seek> WaveReader<R> {
     }
 
     fn read_chunk(&mut self, ident: FourCC, at: u32, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
-        let (start, length) = self.get_chunk_extent_at_index(ident, at)?;
+        let result = self.chunk_reader(ident, at);
 
-        self.inner.seek(SeekFrom::Start(start));
-
-        Ok( self.inner.read_to_end(buffer)? )
+        match result {
+            Ok(mut chunk) => {
+                match chunk.read_to_end(buffer) {
+                    Ok(read) => Ok(read),
+                    Err(err) => Err(err.into())
+                }
+            },
+            Err(ParserError::ChunkMissing { signature : _} ) => Ok(0),
+            Err( any ) => Err(any.into())
+        }
     }
 
     /// Extent of every chunk with the given fourcc
