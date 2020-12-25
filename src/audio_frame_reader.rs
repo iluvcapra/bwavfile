@@ -62,13 +62,6 @@ impl<R: Read + Seek> AudioFrameReader<R> {
         Ok( (seek_result - self.start) / self.format.block_alignment as u64 )
     }
 
-    /// Create a frame buffer sized to hold frames of the reader
-    /// 
-    /// This is a conveneince method that creates a `Vec<i32>` with
-    /// as many elements as there are channels in the underlying stream. 
-    pub fn create_frame_buffer(&self) -> Vec<i32> {
-        vec![0i32; self.format.channel_count as usize]
-    }
 
     /// Read a frame
     /// 

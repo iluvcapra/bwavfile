@@ -4,17 +4,18 @@ use std::io::Cursor;
 
 use super::errors::Error;
 use super::chunks::{WriteBWaveChunks};
-use super::bext::Bext;
 use super::fmt::{WaveFmt};
-use super::fourcc::{FourCC, RIFF_SIG, WAVE_SIG, FMT__SIG, JUNK_SIG, BEXT_SIG, DATA_SIG, WriteFourCC};
+use super::fourcc::{FourCC, RIFF_SIG, WAVE_SIG, FMT__SIG, JUNK_SIG, BEXT_SIG, DATA_SIG, FLLR_SIG, WriteFourCC};
+use super::audio_frame_writer::AudioFrameWriter;
 
 use byteorder::LittleEndian;
 use byteorder::WriteBytesExt;
 
 /// This isn't working yet, do not use.
 pub struct WaveWriter<W> where W: Write + Seek {
-    inner : W,
-    form_size : u64
+    pub inner : W,
+    pub form_size : u64,
+    pub format : WaveFmt
 }
 
 impl WaveWriter<File> {
@@ -27,7 +28,7 @@ impl WaveWriter<File> {
 impl<W: Write + Seek> WaveWriter<W> {
     /// Wrap a `Write` struct with a wavewriter.
     fn new(inner : W, format: WaveFmt) -> Result<Self,Error> {
-        let mut retval = Self { inner, form_size : 0 };
+        let mut retval = Self { inner, form_size : 0 , format: format};
         retval.inner.seek(SeekFrom::Start(0))?;
         retval.inner.write_fourcc(RIFF_SIG)?;
         retval.inner.write_u32::<LittleEndian>(0)?;
@@ -41,6 +42,30 @@ impl<W: Write + Seek> WaveWriter<W> {
     /// Unwrap the inner writer.
     fn into_inner(self) -> W {
         return self.inner;
+    }
+
+    /// Return an AudioFrameWriter, consuming the reader.
+    fn audio_frame_writer(mut self) -> Result<AudioFrameWriter<W>, Error> {
+
+        let framing = 0x4000;
+        self.append_data_framing_chunk(framing)?;
+
+        self.inner.write_fourcc(DATA_SIG)?;
+        self.inner.write_u32::<LittleEndian>(0u32)?;
+        self.update_form_size(8)?;
+
+        Ok( AudioFrameWriter::make(self) )
+    }
+
+    fn append_data_framing_chunk(&mut self, framing: u64) -> Result<(), Error> {
+        let current_length = self.inner.seek(SeekFrom::End(0))?;
+        let size_to_add = (current_length % framing) - 8;
+        let chunk_size_to_add = size_to_add - 8;
+
+        let buf = vec![ 0u8; chunk_size_to_add as usize];
+        self.append_chunk(FLLR_SIG, &buf)?;
+
+        Ok( () )
     }
 
     /// Append data as a new chunk to the wave file.

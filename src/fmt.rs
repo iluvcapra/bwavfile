@@ -212,6 +212,15 @@ impl WaveFmt {
         CommonFormat::make( self.tag, self.extended_format.map(|ext| ext.type_guid))
     }
 
+    /// Create a frame buffer sized to hold frames for a reader or writer
+    /// 
+    /// This is a conveneince method that creates a `Vec<i32>` with
+    /// as many elements as there are channels in the underlying stream. 
+    pub fn create_frame_buffer(&self) -> Vec<i32> {
+        vec![0i32; self.channel_count as usize]
+    }
+
+
     /// Channel descriptors for each channel.
     pub fn channels(&self) -> Vec<ChannelDescriptor> {
         match self.channel_count {
