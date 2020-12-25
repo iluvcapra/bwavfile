@@ -10,18 +10,19 @@ Rust Wave File Reader/Writer with Broadcast-WAV, MBWF and RF64 Support
 
 This is currently a work-in-progress! However many features presently work:
 
-- [x] Read standard WAV, Broadcast-Wave, and 64-bit RF64 and BW64 wave files with one interface for 
-  all types with transparent format detection.
-- [ ] Wave/RF64 file writing with transparent promotion from WAV to RF64.
-- [x] Unified format definition interface for standard and extended-format wave files.
-- [x] Read channel/speaker map metadata.
-- [x] Read standard EBU Broadcast-Wave metadata and decode to fields, including timestamp and SMPTE UMID.
-- [x] iXML and ADM XML metadata.
-- [ ] Broadcast-WAV Level and Quality metadata.
-- [x] Cue list metadata.
-- [ ] Sampler and instrument metadata.
-- [x] Validate the compatibility of a given wave file for certain regimes.
-- [x] Metadata support for ambisonic B-format.
+| Feature                               | Read  | Write |
+|---------------------------------------|-------|-------|
+| Standard .wav files                   | ☑️   |    |
+| Transparent promotion to RF64/BW64    | ☑️   |    |
+| Unified interface for regular and extended Wave format | ☑️  |  |
+| Channel/speaker map metadata          | ☑️    |    |
+| Ambisonic B-format metadata           | ☑️    |   |
+| EBU Broadcast-WAVE Metadata           | ☑️   |    |
+| Basic iXML/ADM Metadata               | ☑️    |    |
+| Broadcast-WAVE Level metadata         |    |    |
+| Cue list metadata                     | ☑️   |    |
+| Sampler and instrument metadata       |    |    |
+| Enhanced Wave file form validation    | ☑️   | 🚫   |
 
 
 ## Use Examples
