@@ -17,9 +17,9 @@ This is currently a work-in-progress! However many features presently work:
 | Unified interface for regular and extended Wave format | ☑️  |  |
 | Channel/speaker map metadata          | ☑️    |    |
 | Ambisonic B-format metadata           | ☑️    |   |
-| EBU Broadcast-WAVE Metadata           | ☑️   |    |
-| Basic iXML/ADM Metadata               | ☑️    |    |
-| Enhanced iXML Metadata support        |        |    |
+| EBU Broadcast-WAVE metadata           | ☑️   |    |
+| Basic iXML/ADM metadata               | ☑️    |    |
+| Enhanced iXML metadata support        |        |    |
 | Broadcast-WAVE Level metadata         |    |    |
 | Cue list metadata                     | ☑️   |    |
 | Sampler and instrument metadata       |    |    |
