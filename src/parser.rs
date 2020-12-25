@@ -45,6 +45,7 @@ pub struct Parser<R: Read + Seek> {
     ds64state: HashMap<FourCC,u64>
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct ChunkIteratorItem {
     pub signature: FourCC,
     pub start: u64,

@@ -20,7 +20,7 @@ This is currently a work-in-progress! However many features presently work:
 | EBU Broadcast-WAVE metadata           | ☑️   |    |
 | Basic iXML/ADM metadata               | ☑️    |    |
 | Enhanced iXML metadata support        |        |    |
-| Broadcast-WAVE Level metadata         |    |    |
+| Broadcast-WAVE Level overview `levl` metadata         |    |    |
 | Cue list metadata                     | ☑️   |    |
 | Sampler and instrument metadata       |    |    |
 | Enhanced Wave file form validation    | ☑️   | 🚫   |
