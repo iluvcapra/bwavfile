@@ -19,6 +19,7 @@ This is currently a work-in-progress! However many features presently work:
 | Ambisonic B-format metadata           | ☑️    |   |
 | EBU Broadcast-WAVE Metadata           | ☑️   |    |
 | Basic iXML/ADM Metadata               | ☑️    |    |
+| Enhanced iXML Metadata support        |        |    |
 | Broadcast-WAVE Level metadata         |    |    |
 | Cue list metadata                     | ☑️   |    |
 | Sampler and instrument metadata       |    |    |
