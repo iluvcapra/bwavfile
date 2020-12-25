@@ -111,8 +111,6 @@ mod common_format;
 
 mod parser;
 
-
-mod raw_chunk_reader;
 mod audio_frame_reader;
 mod list_form;
 

@@ -1,10 +1,11 @@
 
+use std::io::SeekFrom;
 use std::fs::File;
 
 use super::parser::Parser;
 use super::fourcc::{FourCC, ReadFourCC, FMT__SIG,DATA_SIG, BEXT_SIG, LIST_SIG, JUNK_SIG, FLLR_SIG, CUE__SIG, ADTL_SIG};
 use super::errors::Error as ParserError;
-use super::raw_chunk_reader::RawChunkReader;
+//use super::raw_chunk_reader::RawChunkReader;
 use super::fmt::{WaveFmt, ChannelDescriptor, ChannelMask};
 use super::bext::Bext;
 use super::audio_frame_reader::AudioFrameReader;
@@ -123,7 +124,9 @@ impl<R: Read + Seek> WaveReader<R> {
     /// Sample and frame format of this wave file.
     ///
     pub fn format(&mut self) -> Result<WaveFmt, ParserError> {
-        self.chunk_reader(FMT__SIG, 0)?.read_wave_fmt()
+        let (start, _) = self.get_chunk_extent_at_index(FMT__SIG, 0)?;
+        self.inner.seek(SeekFrom::Start(start))?;
+        self.inner.read_wave_fmt()
     }
 
     ///
@@ -385,10 +388,10 @@ impl<R:Read+Seek> WaveReader<R> {
     // As time passes thi get smore obnoxious because I haven't implemented recursive chunk 
     // parsing in the raw parser and I'm working around it
 
-    fn chunk_reader(&mut self, signature: FourCC, at_index: u32) -> Result<RawChunkReader<R>, ParserError> {
-        let (start, length) = self.get_chunk_extent_at_index(signature, at_index)?;
-        Ok( RawChunkReader::new(&mut self.inner, start, length) )
-    } 
+    // fn chunk_reader(&mut self, signature: FourCC, at_index: u32) -> Result<RawChunkReader<R>, ParserError> {
+    //     let (start, length) = self.get_chunk_extent_at_index(signature, at_index)?;
+    //     Ok( RawChunkReader::new(&mut self.inner, start, length) )
+    // } 
 
     fn read_list(&mut self, ident: FourCC, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
         if let Some(index) = self.get_list_form(ident)? {
@@ -398,15 +401,14 @@ impl<R:Read+Seek> WaveReader<R> {
         }
     }
 
-    fn read_chunk(&mut self, ident: FourCC, at: u32, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
-        let result = self.chunk_reader(ident, at);
 
-        match result {
-            Ok(mut chunk) => {
-                match chunk.read_to_end(buffer) {
-                    Ok(read) => Ok(read),
-                    Err(err) => Err(err.into())
-                }
+    fn read_chunk(&mut self, ident: FourCC, at: u32, mut buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
+
+        match self.get_chunk_extent_at_index(ident, at) {
+            Ok((start, length)) => {
+                buffer.resize(length as usize, 0x0);
+                self.inner.seek(SeekFrom::Start(start))?;
+                self.inner.read(&mut buffer).map_err(|e| ParserError::IOError(e))
             },
             Err(ParserError::ChunkMissing { signature : _} ) => Ok(0),
             Err( any ) => Err(any.into())
@@ -423,9 +425,9 @@ impl<R:Read+Seek> WaveReader<R> {
 
     /// Index of first LIST for with the given FORM fourcc
     fn get_list_form(&mut self, fourcc: FourCC) -> Result<Option<u32>, ParserError> {
-        for (n, (start, length)) in self.get_chunks_extents(LIST_SIG)?.iter().enumerate() {
-            let mut reader = RawChunkReader::new(&mut self.inner, *start, *length);
-            let this_fourcc = reader.read_fourcc()?;
+        for (n, (start, _)) in self.get_chunks_extents(LIST_SIG)?.iter().enumerate() {
+            self.inner.seek(SeekFrom::Start(*start as u64))?;
+            let this_fourcc = self.inner.read_fourcc()?;
             if this_fourcc == fourcc {
                 return Ok( Some( n as u32 ) );
             }
