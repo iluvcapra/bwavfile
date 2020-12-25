@@ -39,8 +39,8 @@ This is currently a work-in-progress! However many features presently work:
  assert_eq!(format.sample_rate, 44100);
  assert_eq!(format.channel_count, 1);
  
+ let mut buffer = format.create_frame_buffer();
  let mut frame_reader = r.audio_frame_reader().unwrap();
- let mut buffer = frame_reader.create_frame_buffer();
  
  let read = frame_reader.read_integer_frame(&mut buffer).unwrap();
  
