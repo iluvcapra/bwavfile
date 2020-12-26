@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use super::common_format::{CommonFormat, UUID_PCM};
+use super::common_format::{CommonFormat, UUID_PCM,UUID_BFORMAT_PCM};
 
 #[allow(dead_code)]
 
@@ -195,7 +195,22 @@ impl WaveFmt {
 
     /// Create a new integer PCM format for ambisonic b-format.
     pub fn new_pcm_ambisonic(sample_rate: u32, bits_per_sample: u16, channel_count: u16) -> Self {
-        todo!()
+        let container_bits_per_sample = bits_per_sample + (bits_per_sample % 8);
+        let container_bytes_per_sample= container_bits_per_sample / 8;
+
+        WaveFmt {
+            tag : 0xFFFE,
+            channel_count,
+            sample_rate,
+            bytes_per_second: container_bytes_per_sample as u32 * sample_rate * channel_count as u32,
+            block_alignment: container_bytes_per_sample * channel_count,
+            bits_per_sample: container_bits_per_sample,
+            extended_format: Some(WaveFmtExtended {
+                valid_bits_per_sample: bits_per_sample,
+                channel_mask: ChannelMask::DirectOut as u32,
+                type_guid: UUID_BFORMAT_PCM
+            })
+        }
     }
 
     /// Create a new integer PCM format `WaveFmt` with a custom channel bitmap.

@@ -16,7 +16,7 @@ This is currently a work-in-progress! However many features presently work:
 | Transparent promotion to RF64/BW64    | ☑️   |     |
 | Unified interface for regular and extended Wave format | ☑️  |  |
 | Channel/speaker map metadata          | ☑️   | ☑️   |
-| Ambisonic B-format metadata           | ☑️   |     |
+| Ambisonic B-format metadata           | ☑️   | ☑️   |
 | EBU Broadcast-WAVE metadata           | ☑️   | ☑️   |
 | Basic iXML/ADM metadata               | ☑️   |     |
 | Enhanced iXML metadata support        |     |     |

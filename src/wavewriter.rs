@@ -191,9 +191,9 @@ impl<W> WaveWriter<W> where W: Write + Seek {
 
     /// Write Broadcast-Wave metadata to the file.
     /// 
-    /// This function will write the metadata chunk immediately; if you have
-    /// already written and closed the audio data the bext chunk will be 
-    /// positioned after it.
+    /// This function will write the metadata chunk immediately to the end of 
+    /// the file; if you have already written and closed the audio data the 
+    /// bext chunk will be positioned after it.
     fn write_broadcast_metadata(self, bext: &Bext) -> Result<Self,Error> {
         let mut b = self.chunk(BEXT_SIG)?;
         b.write_bext(bext)?;
