@@ -3,20 +3,19 @@ pub type LU = f32;
 pub type LUFS = f32;
 pub type Decibels = f32;
 
-/**
- * Broadcast-WAV metadata record.
- * 
- * The `bext` record contains information about the original recording of the 
- * Wave file, including a longish (256 ASCII chars) description field, 
- * originator identification fields, creation calendar date and time, a 
- * sample-accurate recording time field, and a SMPTE UMID. 
- * 
- * For a Wave file to be a complaint "Broadcast-WAV" file, it must contain
- * a `bext` metadata record.
- * 
- * For reference on the structure and use of the BEXT record
- * check out [EBU Tech 3285](https://tech.ebu.ch/docs/tech/tech3285.pdf).
- */
+
+///  Broadcast-WAV metadata record.
+///
+///  The `bext` record contains information about the original recording of the 
+///  Wave file, including a longish (256 ASCII chars) description field, 
+///  originator identification fields, creation calendar date and time, a 
+///  sample-accurate recording time field, and a SMPTE UMID. 
+///
+///  For a Wave file to be a complaint "Broadcast-WAV" file, it must contain
+///  a `bext` metadata record.
+///
+///  For reference on the structure and use of the BEXT record
+///  check out [EBU Tech 3285](https://tech.ebu.ch/docs/tech/tech3285.pdf).
 #[derive(Debug)]
 pub struct Bext {
 
@@ -46,7 +45,6 @@ pub struct Bext {
     pub version: u16,
 
     /// SMPTE 330M UMID
-    /// 
     /// 
     /// This field is `None` if the version is less than 1.
     pub umid: Option<[u8; 64]>,

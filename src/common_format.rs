@@ -1,12 +1,5 @@
 use uuid::Uuid;
 
-/**
- * References:
- * - http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/multichaudP.pdf
-*/
-
-// http://dream.cs.bath.ac.uk/researchdev/wave-ex/bformat.html
-
 const BASIC_PCM: u16        = 0x0001;
 const BASIC_FLOAT: u16      = 0x0003;
 const BASIC_MPEG: u16       = 0x0050;
@@ -45,7 +38,7 @@ fn uuid_from_basic_tag(tag: u16) -> Uuid {
 
 /// Sample format of the Wave file.
 /// 
-///
+/// 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum CommonFormat {
     /// Integer linear PCM
@@ -71,6 +64,7 @@ pub enum CommonFormat {
 }
 
 impl CommonFormat {
+    /// Resolve a tag and Uuid to a `CommonFormat`.
     pub fn make(basic: u16, uuid: Option<Uuid>) -> Self {
         match (basic, uuid) {
             (BASIC_PCM, _) => Self::IntegerPCM,
@@ -85,6 +79,10 @@ impl CommonFormat {
         }
     }
 
+    /// Get the appropriate tag and `Uuid` for the callee.
+    /// 
+    /// If there is no appropriate tag for the format of the callee, the 
+    /// returned tag will be 0xFFFE and the `Uuid` will describe the format.
     pub fn take(self) -> (u16, Uuid) {
         match self {
             Self::IntegerPCM => (BASIC_PCM, UUID_PCM),

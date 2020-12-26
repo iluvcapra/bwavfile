@@ -10,12 +10,17 @@ use super::chunks::WriteBWaveChunks;
 use byteorder::LittleEndian;
 use byteorder::WriteBytesExt;
 
-
+/// Write audio frames to a `WaveWriter`.
+/// 
+/// 
 pub struct AudioFrameWriter<W> where W: Write + Seek {
     inner : WaveChunkWriter<W>
 }
 
 impl<W> AudioFrameWriter<W> where W: Write + Seek {
+
+    /// Write one audio frame.
+    /// 
     pub fn write_integer_frame(&mut self, buffer: &[i32]) -> Result<u64,Error> {
         let format = self.inner.inner.format;
         assert!(buffer.len() as u16 == format.channel_count, 
@@ -38,12 +43,24 @@ impl<W> AudioFrameWriter<W> where W: Write + Seek {
         Ok(1)
     }
 
+    /// Finish writing audio frames and unwrap the inner `WaveWriter`.
+    /// 
+    /// This method must be called when the client has finished writing audio
+    /// data. This will finalize the audio data chunk.
     pub fn end(self) -> Result<WaveWriter<W>, Error> {
         self.inner.end()
     }
 }
 
-
+/// Write a wave data chunk.
+/// 
+/// `WaveChunkWriter` implements `Write` and can be written to like any 
+/// writeable stream. 
+/// 
+/// ### Important 
+/// 
+/// When you are done writing to a chunk you must call `end()` in order to 
+/// finalize the chunk for storage.
 pub struct WaveChunkWriter<W> where W: Write + Seek {
     inner : WaveWriter<W>,
     content_start_pos : u64,
@@ -165,6 +182,10 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         WaveChunkWriter::begin(self, ident)
     }
 
+    /// Create an audio frame writer, which takes possession of the callee 
+    /// `WaveWriter`.
+    /// 
+    /// 
     pub fn audio_frame_writer(mut self) -> Result<AudioFrameWriter<W>, Error> {
         // append elm1 chunk
 

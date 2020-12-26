@@ -124,7 +124,7 @@ mod wavewriter;
 
 pub use errors::Error;
 pub use wavereader::WaveReader;
-pub use wavewriter::WaveWriter;
+pub use wavewriter::{WaveWriter, AudioFrameWriter};
 pub use bext::Bext;
 pub use fmt::{WaveFmt, WaveFmtExtended, ChannelDescriptor, ChannelMask, ADMAudioID};
 pub use common_format::CommonFormat;
