@@ -2,8 +2,9 @@ use std::fs::File;
 use std::io::{Write,Seek,SeekFrom};
 
 use super::Error;
-use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, WAVE_SIG, FMT__SIG,};
+use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, WAVE_SIG, FMT__SIG,FACT_SIG};
 use super::fmt::WaveFmt;
+use super::common_format::CommonFormat;
 use super::chunks::WriteBWaveChunks;
 
 use byteorder::LittleEndian;
@@ -66,7 +67,9 @@ impl<W> Write for WaveChunkWriter<W> where W: Write + Seek {
 pub struct WaveWriter<W> where W: Write + Seek {
     inner : W,
     form_length: u64,
-    format: WaveFmt
+
+    /// Format of the wave file.
+    pub format: WaveFmt
 }
 
 impl WaveWriter<File> {
@@ -97,7 +100,14 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         chunk.write_wave_fmt(&format)?;
         let retval = chunk.end();
 
-        Ok( retval )
+        if format.common_format() != CommonFormat::IntegerPCM {
+            let mut chunk = retval.begin_chunk(FACT_SIG)?;
+            chunk.write_u32::<LittleEndian>(0)?;
+            let retval = chunk.end();
+            Ok( retval )
+        } else {
+            Ok( retval )
+        }
     }
 
     /// Create a new chunk writer, which takes posession of the `WaveWriter`.
@@ -136,3 +146,4 @@ fn test_new() {
     assert_eq!(form_size, fmt_size + 8 + 4);
 
 }
+

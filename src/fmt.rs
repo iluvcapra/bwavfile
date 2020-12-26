@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use super::common_format::CommonFormat;
+use super::common_format::{CommonFormat, UUID_PCM};
 
 #[allow(dead_code)]
 
@@ -200,7 +200,17 @@ impl WaveFmt {
             bytes_per_second: container_bytes_per_sample as u32 * sample_rate * channel_count as u32,
             block_alignment: container_bytes_per_sample * channel_count,
             bits_per_sample: container_bits_per_sample,
-            extended_format: None
+            extended_format: {
+                if channel_count > 2 {
+                    Some( WaveFmtExtended {
+                        channel_mask : !(0xFFFF_FFFF << channel_count),
+                        type_guid: UUID_PCM,
+                        valid_bits_per_sample: bits_per_sample
+                    })
+                } else {
+                    None
+                }
+            }
         }
     }
 
