@@ -112,7 +112,6 @@ mod common_format;
 mod parser;
 
 mod audio_frame_reader;
-mod audio_frame_writer;
 mod list_form;
 
 mod chunks;

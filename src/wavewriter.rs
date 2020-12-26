@@ -1,215 +1,138 @@
-use std::collections::HashMap;
-use std::io::{Write, Seek, SeekFrom};
 use std::fs::File;
-use std::io::Cursor;
+use std::io::{Write,Seek,SeekFrom};
 
-use super::errors::Error;
-use super::chunks::WriteBWaveChunks;
+use super::Error;
+use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, WAVE_SIG, FMT__SIG,};
 use super::fmt::WaveFmt;
-
-use super::common_format::CommonFormat;
-use super::fourcc::{FourCC, RIFF_SIG, RF64_SIG, WAVE_SIG, FMT__SIG, JUNK_SIG, 
-    DS64_SIG, FACT_SIG, FLLR_SIG, ELM1_SIG, WriteFourCC};
-
-use super::bext::Bext;
-
-//use super::audio_frame_writer::AudioFrameWriter;
+use super::chunks::WriteBWaveChunks;
 
 use byteorder::LittleEndian;
 use byteorder::WriteBytesExt;
 
-enum WritingState {
-    NoChunk,
-    ChunkOpen { ident: FourCC, length: u64, length_field_pos: u64 }
+
+pub struct WaveChunkWriter<W> where W: Write + Seek {
+    inner : WaveWriter<W>,
+    content_start_pos : u64,
+    length : u64
 }
 
-/// This isn't working yet, do not use.
+impl<W> WaveChunkWriter<W> where W: Write + Seek {
+
+    fn begin(mut inner : WaveWriter<W>, ident : FourCC) -> Result<Self,Error> {
+        let length : u64 = 0;
+        inner.inner.write_fourcc(ident)?;
+        inner.inner.write_u32::<LittleEndian>(length as u32)?;
+        inner.increment_form_length(8)?;
+        let content_start_pos = inner.inner.seek(SeekFrom::End(0))?;
+        Ok( WaveChunkWriter { inner , content_start_pos, length } )
+    }
+
+    fn end(self) -> WaveWriter<W> {
+        self.inner
+    }
+
+    fn increment_chunk_length(&mut self, amount: u64) -> Result<(), std::io::Error> {
+        self.length = self.length + amount;
+        if self.length < u32::MAX as u64 {
+            self.inner.inner.seek(SeekFrom::Start(self.content_start_pos - 4))?;
+            self.inner.inner.write_u32::<LittleEndian>(self.length as u32)?;
+        } else {
+            todo!()
+        }
+
+        Ok(())
+    }
+}
+
+impl<W> Write for WaveChunkWriter<W> where W: Write + Seek {
+
+    fn write(&mut self, buffer: &[u8]) -> Result<usize, std::io::Error> { 
+        self.inner.inner.seek(SeekFrom::End(0))?;
+        let written = self.inner.inner.write(buffer)?;
+        self.increment_chunk_length(written as u64)?;
+        self.inner.increment_form_length(written as u64)?;
+
+        Ok( written )
+    }
+
+    fn flush(&mut self) -> Result<(), std::io::Error> { 
+        self.inner.inner.flush()
+    }
+}
+
+/// Wave, Broadcast-WAV and RF64/BW64 writer.
+/// 
+/// 
 pub struct WaveWriter<W> where W: Write + Seek {
-    pub format : WaveFmt,
     inner : W,
-    form_size : u64,
-    ds64_sizes : Option<HashMap<FourCC,u64>>,
-    writing_state : WritingState,
+    form_length: u64,
+    format: WaveFmt
 }
 
 impl WaveWriter<File> {
-    pub fn create(path: &str, format: WaveFmt) -> Result<Self, Error>  {
+
+    /// Create a new Wave file at `path`.
+    pub fn create(path : &str, format : WaveFmt) -> Result<Self, Error> {
         let f = File::create(path)?;
-        Self::new(f, format)
+        Ok( Self::new(f, format)? )
     }
 }
 
-impl<W: Write + Seek> WaveWriter<W> {
-    /// Wrap a `Write` struct with a wavewriter.
-    pub fn new(inner : W, format: WaveFmt) -> Result<Self,Error> {
-        let mut retval = Self { inner, form_size : 0, format: format, 
-            ds64_sizes : None,
-            writing_state : WritingState::NoChunk
-        };
+impl<W> WaveWriter<W> where W: Write + Seek {
 
-        retval.inner.seek(SeekFrom::Start(0))?;
-        retval.inner.write_fourcc(RIFF_SIG)?;
-        retval.inner.write_u32::<LittleEndian>(0)?;
-        retval.inner.write_fourcc(WAVE_SIG)?;
-        retval.update_form_size(4)?;
-        retval.write_ds64_reservation()?;
-        retval.write_format_chunk()?;
-        if format.common_format() != CommonFormat::IntegerPCM {
-            retval.write_fact_chunk()?;
-        }
-        retval.write_framing_filler()?;
+    /// Wrap a writer in a Wave writer.
+    /// 
+    /// The inner writer will immediately have a RIFF WAVE file header 
+    /// written to it along with the format descriptor (and possibly a `fact`
+    /// chunk if appropriate).
+    pub fn new(mut inner : W, format: WaveFmt) -> Result<Self, Error> {
+        inner.write_fourcc(RIFF_SIG)?;
+        inner.write_u32::<LittleEndian>(0)?;
+        inner.write_fourcc(WAVE_SIG)?;
+
+        let mut retval = WaveWriter { inner, form_length: 0, format};
+        retval.increment_form_length(4)?;
+
+        let mut chunk = retval.begin_chunk(FMT__SIG)?;
+        chunk.write_wave_fmt(&format)?;
+        let retval = chunk.end();
 
         Ok( retval )
     }
-    
-    /// Unwrap the inner writer.
-    pub fn into_inner(self) -> W {
-        return self.inner;
-    }
 
-    pub fn begin_chunk(&mut self, ident : FourCC) -> Result<(),Error> {
+    /// Create a new chunk writer, which takes posession of the `WaveWriter`.
+    /// 
+    /// Begin writing a chunk segment. To close the chunk (and perhaps write 
+    /// another), call `end()` on the chunk writer.
+    pub fn begin_chunk(mut self, ident: FourCC) -> Result<WaveChunkWriter<W>,Error> {
         self.inner.seek(SeekFrom::End(0))?;
-        self.inner.write_fourcc(ident)?;
-        let length_field_pos = self.inner.seek(SeekFrom::Current(0))?;
-        self.inner.write_u32::<LittleEndian>(0)?;
-        self.writing_state = WritingState::ChunkOpen {ident, length: 0, length_field_pos };
-        self.update_form_size(8)?;
-        Ok( () )
+        WaveChunkWriter::begin(self, ident)
     }
 
-    pub fn append_data_to_chunk(&mut self, buffer : &[u8]) -> Result<u64,Error> {
-        match self.writing_state {
-            WritingState::ChunkOpen {ident: _, length, length_field_pos} => {
-                self.inner.seek(SeekFrom::End(0))?;
-                self.inner.write(buffer)?;
-                self.inner.seek(SeekFrom::Start(length_field_pos))?;
-                let new_length = length + buffer.len() as u64;
-                if new_length >= (u32::MAX as u64) {
-                    todo!();
-                } else {
-                    self.inner.write_u32::<LittleEndian>(new_length as u32)?;
-                    self.update_form_size(buffer.len() as u64)?;
-                }
-                
-                Ok(buffer.len() as u64)
-            },
-            _ => Err(Error::DataChunkNotPreparedForAppend)
-        }
-    }
-
-    pub fn end_chunk(&mut self) -> Result<(), Error> {
-        match self.writing_state {
-            WritingState::ChunkOpen { ident:_, length, length_field_pos : _ } => {
-                if length % 2 == 1 {
-                    self.inner.seek(SeekFrom::End(0))?;
-                    self.inner.write_u8(0)?;
-                    self.update_form_size(1)?;
-                }
-                Ok(())
-            },
-            WritingState::NoChunk => Ok(())
-        }
-    }
-
-}
-
-
-impl<W: Write + Seek> WaveWriter<W> { /* Private implementation */
-
-    fn write_format_chunk(&mut self) -> Result<(), Error> {
-        let mut buf : Vec<u8> = vec![];
-        let mut cursor = Cursor::new(&mut buf);
-        cursor.write_wave_fmt(&self.format)?;
-        self.append_chunk(FMT__SIG, &buf)
-    }
-
-    fn write_fact_chunk(&mut self) -> Result<(), Error> {
-        self.append_chunk(FACT_SIG, &[0u8; 4])?;
-        Ok(())
-    }
-
-    fn write_ds64_reservation(&mut self) -> Result<(),Error> {
-        self.append_chunk(JUNK_SIG, &[0u8; 96])?;
-        Ok(())
-    }
-
-    fn write_framing_filler(&mut self) -> Result<(),Error> {
-        let framing = 0x4000;
-        let current_length = self.inner.seek(SeekFrom::End(0))?;
-        let size_to_add = framing - ((current_length % framing) - 8);
-        let chunk_size_to_add = size_to_add - 8;
-
-        let buf = vec![ 0u8; chunk_size_to_add as usize];
-        self.append_chunk(ELM1_SIG, &buf)?;
-        Ok( () )
-    }
-
-    fn append_chunk(&mut self, ident : FourCC, buffer: &[u8]) -> Result<(),Error> {
-        self.begin_chunk(ident)?;
-        self.append_data_to_chunk(buffer)?;
-        self.end_chunk()?;
-        Ok(())
-    }
-
-    fn update_form_size(&mut self, added_size: u64) -> Result<(),Error> {
+    fn increment_form_length(&mut self, amount: u64) -> Result<(), std::io::Error> {
+        self.form_length = self.form_length + amount;
         self.inner.seek(SeekFrom::Start(4))?;
-        let new_size = added_size + self.form_size;
-        if new_size < (u32::MAX as u64) {
-            self.inner.write_u32::<LittleEndian>(new_size as u32)?;
-        } else {
-            self.update_form_size_ds64(new_size)?;
-        }
-        self.form_size = new_size;
-        Ok( () )
-    }
-    
-    fn update_form_size_ds64(&mut self, new_size: u64) -> Result<(), Error> {
-        if self.ds64_sizes.is_none() {
-            self.inner.seek(SeekFrom::Start(0))?;
-            self.inner.write_fourcc(RF64_SIG)?;
-            self.inner.seek(SeekFrom::Start(12))?;
-            self.inner.write_fourcc(DS64_SIG)?;
-            self.ds64_sizes = Some( HashMap::new() );
-        }
-
-        self.inner.seek(SeekFrom::Start(20))?;
-        self.inner.write_u64::<LittleEndian>(new_size)?;
-
+        self.inner.write_u32::<LittleEndian>(self.form_length as u32)?;
         Ok(())
     }
 }
 
 #[test]
-fn test_simple_create() {
+fn test_new() {
+    use std::io::Cursor;
     use super::fourcc::ReadFourCC;
     use byteorder::ReadBytesExt;
 
-    let buf = vec![0u8; 0];
-
-    let mut cursor = Cursor::new(buf);
-    let format = WaveFmt::new_pcm(48000, 24, 1);
-
-    let w = WaveWriter::new(cursor, format).unwrap();
-
-    cursor = w.into_inner();
+    let mut cursor = Cursor::new(vec![0u8;0]);
+    let format = WaveFmt::new_pcm(4800, 24, 1);
+    WaveWriter::new(&mut cursor, format).unwrap();
 
     cursor.seek(SeekFrom::Start(0)).unwrap();
-
-    assert_eq!( cursor.read_fourcc().unwrap(), RIFF_SIG);
+    assert_eq!(cursor.read_fourcc().unwrap(), RIFF_SIG);
     let form_size = cursor.read_u32::<LittleEndian>().unwrap();
-    assert_eq!( cursor.read_fourcc().unwrap(), WAVE_SIG);
-
-    assert_eq!( cursor.read_fourcc().unwrap(), JUNK_SIG);
-    let junk_size = cursor.read_u32::<LittleEndian>().unwrap();
-    cursor.seek(SeekFrom::Current(junk_size as i64)).unwrap();
-
-    assert_eq!( cursor.read_fourcc().unwrap(), FMT__SIG);
+    assert_eq!(cursor.read_fourcc().unwrap(), WAVE_SIG);
+    assert_eq!(cursor.read_fourcc().unwrap(), FMT__SIG);
     let fmt_size = cursor.read_u32::<LittleEndian>().unwrap();
-    cursor.seek(SeekFrom::Current(fmt_size as i64)).unwrap();
+    assert_eq!(form_size, fmt_size + 8 + 4);
 
-    assert_eq!( cursor.read_fourcc().unwrap(), ELM1_SIG);
-    let junk2_size = cursor.read_u32::<LittleEndian>().unwrap();
-    cursor.seek(SeekFrom::Current(junk2_size as i64)).unwrap();
-
-    assert_eq!( form_size , junk2_size + junk_size + fmt_size + 4 + 8 * 3);
 }
