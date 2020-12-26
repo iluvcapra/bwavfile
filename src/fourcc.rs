@@ -106,6 +106,7 @@ pub const FACT_SIG: FourCC = FourCC::make(b"fact");
 
 pub const JUNK_SIG: FourCC = FourCC::make(b"JUNK");
 pub const FLLR_SIG: FourCC = FourCC::make(b"FLLR");
+pub const ELM1_SIG: FourCC = FourCC::make(b"elm1");
 pub const LIST_SIG: FourCC = FourCC::make(b"LIST");
 
 pub const CUE__SIG: FourCC = FourCC::make(b"cue ");
