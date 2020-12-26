@@ -5,7 +5,6 @@ use std::fs::File;
 use super::parser::Parser;
 use super::fourcc::{FourCC, ReadFourCC, FMT__SIG,DATA_SIG, BEXT_SIG, LIST_SIG, JUNK_SIG, FLLR_SIG, CUE__SIG, ADTL_SIG};
 use super::errors::Error as ParserError;
-//use super::raw_chunk_reader::RawChunkReader;
 use super::fmt::{WaveFmt, ChannelDescriptor, ChannelMask};
 use super::bext::Bext;
 use super::audio_frame_reader::AudioFrameReader;
