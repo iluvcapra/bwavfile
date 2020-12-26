@@ -23,7 +23,7 @@ This is currently a work-in-progress! However many features presently work:
 | Broadcast-WAVE Level overview `levl` metadata         |    |    |
 | Cue list metadata                     | ☑️   |    |
 | Sampler and instrument metadata       |    |    |
-| Enhanced Wave file form validation    | ☑️   | 🚫   |
+| Enhanced Wave file form validation    | ☑️   |    |
 
 
 ## Use Examples
