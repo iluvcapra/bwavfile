@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{Write,Seek,SeekFrom};
 
 use super::Error;
-use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, WAVE_SIG, FMT__SIG, DATA_SIG, ELM1_SIG};
+use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, WAVE_SIG, FMT__SIG, DATA_SIG, ELM1_SIG, JUNK_SIG};
 use super::fmt::WaveFmt;
 //use super::common_format::CommonFormat;
 use super::chunks::WriteBWaveChunks;
@@ -39,7 +39,7 @@ impl<W> AudioFrameWriter<W> where W: Write + Seek {
                     b, format.channel_count, format.block_alignment)
             }
         }
-
+        self.inner.flush()?;
         Ok(1)
     }
 
@@ -54,10 +54,9 @@ impl<W> AudioFrameWriter<W> where W: Write + Seek {
 
 /// Write a wave data chunk.
 /// 
-/// `WaveChunkWriter` implements `Write` and can be written to like any 
-/// writeable stream. 
+/// `WaveChunkWriter` implements `Write` and as bytes are written to it,
 /// 
-/// ### Important 
+/// ### Important! 
 /// 
 /// When you are done writing to a chunk you must call `end()` in order to 
 /// finalize the chunk for storage.
@@ -75,6 +74,7 @@ impl<W> WaveChunkWriter<W> where W: Write + Seek {
         inner.inner.write_u32::<LittleEndian>(length as u32)?;
         inner.increment_form_length(8)?;
         let content_start_pos = inner.inner.seek(SeekFrom::End(0))?;
+        //inner.inner.flush()?;
         Ok( WaveChunkWriter { inner , content_start_pos, length } )
     }
 
@@ -84,6 +84,7 @@ impl<W> WaveChunkWriter<W> where W: Write + Seek {
             self.inner.inner.write(&[0u8])?;
             self.inner.increment_form_length(1)?;
         }
+        //self.flush()?;
         Ok( self.inner )
     }
 
@@ -93,7 +94,7 @@ impl<W> WaveChunkWriter<W> where W: Write + Seek {
             self.inner.inner.seek(SeekFrom::Start(self.content_start_pos - 4))?;
             self.inner.inner.write_u32::<LittleEndian>(self.length as u32)?;
         } else {
-            todo!()
+            todo!("FIXME RF64 wave writing is not yet supported")
         }
 
         Ok(())
@@ -117,6 +118,9 @@ impl<W> Write for WaveChunkWriter<W> where W: Write + Seek {
 }
 
 /// Wave, Broadcast-WAV and RF64/BW64 writer.
+/// 
+/// A WaveWriter creates a new wave file at the given path (with `create()`)
+/// or into the given `Write`- and `Seek`-able `W`
 /// 
 /// ```
 /// use bwavfile::{WaveWriter,WaveFmt};
@@ -166,7 +170,11 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         let mut retval = WaveWriter { inner, form_length: 0, format};
         retval.increment_form_length(4)?;
 
-        let mut chunk = retval.begin_chunk(FMT__SIG)?;
+        let mut chunk = retval.chunk(JUNK_SIG)?;
+        chunk.write(&[0u8; 96])?;
+        let retval = chunk.end()?;
+
+        let mut chunk = retval.chunk(FMT__SIG)?;
         chunk.write_wave_fmt(&format)?;
         let retval = chunk.end()?;
 
@@ -177,7 +185,7 @@ impl<W> WaveWriter<W> where W: Write + Seek {
     /// 
     /// Begin writing a chunk segment. To close the chunk (and perhaps write 
     /// another), call `end()` on the chunk writer.
-    pub fn begin_chunk(mut self, ident: FourCC) -> Result<WaveChunkWriter<W>,Error> {
+    pub fn chunk(mut self, ident: FourCC) -> Result<WaveChunkWriter<W>,Error> {
         self.inner.seek(SeekFrom::End(0))?;
         WaveChunkWriter::begin(self, ident)
     }
@@ -193,20 +201,25 @@ impl<W> WaveWriter<W> where W: Write + Seek {
 
         let lip = self.inner.seek(SeekFrom::End(0))?;
         let to_add = framing - (lip % framing) - 16;
-        let mut chunk = self.begin_chunk(ELM1_SIG)?;
+        let mut chunk = self.chunk(ELM1_SIG)?;
         let buf = vec![0u8; to_add as usize];
         chunk.write(&buf)?;
         let closed = chunk.end()?;
 
-        let inner = closed.begin_chunk(DATA_SIG)?;
+        let inner = closed.chunk(DATA_SIG)?;
         Ok( AudioFrameWriter { inner } )
     }
 
     fn increment_form_length(&mut self, amount: u64) -> Result<(), std::io::Error> {
         self.form_length = self.form_length + amount;
-        self.inner.seek(SeekFrom::Start(4))?;
-        self.inner.write_u32::<LittleEndian>(self.form_length as u32)?;
-        Ok(())
+        if self.form_length < u32::MAX as u64 {
+            self.inner.seek(SeekFrom::Start(4))?;
+            self.inner.write_u32::<LittleEndian>(self.form_length as u32)?;
+            Ok(())
+        } else {
+            todo!("FIXME RF64 wave writing is not yet supported")
+        }
+
     }
 
 }
@@ -222,12 +235,19 @@ fn test_new() {
     WaveWriter::new(&mut cursor, format).unwrap();
 
     cursor.seek(SeekFrom::Start(0)).unwrap();
+
     assert_eq!(cursor.read_fourcc().unwrap(), RIFF_SIG);
     let form_size = cursor.read_u32::<LittleEndian>().unwrap();
     assert_eq!(cursor.read_fourcc().unwrap(), WAVE_SIG);
+
+    assert_eq!(cursor.read_fourcc().unwrap(), JUNK_SIG);
+    let junk_size = cursor.read_u32::<LittleEndian>().unwrap();
+    assert_eq!(junk_size,96);
+    cursor.seek(SeekFrom::Current(junk_size as i64)).unwrap();
+
     assert_eq!(cursor.read_fourcc().unwrap(), FMT__SIG);
     let fmt_size = cursor.read_u32::<LittleEndian>().unwrap();
-    assert_eq!(form_size, fmt_size + 8 + 4);
+    assert_eq!(form_size, 4 + 8 + junk_size + 8 + fmt_size);
 }
 
 #[test]
@@ -252,22 +272,30 @@ fn test_write_audio() {
 
     cursor.seek(SeekFrom::Start(0)).unwrap();
     assert_eq!(cursor.read_fourcc().unwrap(), RIFF_SIG);
-    let _ = cursor.read_u32::<LittleEndian>().unwrap();
-    assert_eq!(cursor.read_fourcc().unwrap(), WAVE_SIG);
-    assert_eq!(cursor.read_fourcc().unwrap(), FMT__SIG);
-    let seek = cursor.read_u32::<LittleEndian>().unwrap();
-    cursor.seek(SeekFrom::Current(seek as i64)).unwrap();
+    let form_size = cursor.read_u32::<LittleEndian>().unwrap();
 
-    assert_eq!(cursor.read_fourcc().unwrap(), ELM1_SIG);
-    let seek = cursor.read_u32::<LittleEndian>().unwrap();
-    cursor.seek(SeekFrom::Current(seek as i64)).unwrap();
+    assert_eq!(cursor.read_fourcc().unwrap(), WAVE_SIG); //4
 
-    assert_eq!(cursor.read_fourcc().unwrap(), DATA_SIG);
-    let data_size = cursor.read_u32::<LittleEndian>().unwrap();
+    assert_eq!(cursor.read_fourcc().unwrap(), JUNK_SIG); //4
+    let junk_size = cursor.read_u32::<LittleEndian>().unwrap(); //4
+    cursor.seek(SeekFrom::Current(junk_size as i64)).unwrap();
+
+    assert_eq!(cursor.read_fourcc().unwrap(), FMT__SIG); //4
+    let fmt_size = cursor.read_u32::<LittleEndian>().unwrap(); //4
+    cursor.seek(SeekFrom::Current(fmt_size as i64)).unwrap();
+
+    assert_eq!(cursor.read_fourcc().unwrap(), ELM1_SIG); //4
+    let elm1_size = cursor.read_u32::<LittleEndian>().unwrap(); //4
+    cursor.seek(SeekFrom::Current(elm1_size as i64)).unwrap();
+
+    assert_eq!(cursor.read_fourcc().unwrap(), DATA_SIG); //4
+    let data_size = cursor.read_u32::<LittleEndian>().unwrap(); //4
     assert_eq!(data_size, 9);
 
     let tell = cursor.seek(SeekFrom::Current(0)).unwrap();
     assert!(tell % 0x4000 == 0);
+
+    assert_eq!(form_size, 4 + 8 + junk_size + 8 + fmt_size + 8 + elm1_size + 8 + data_size + data_size % 2)
     
 
 }
