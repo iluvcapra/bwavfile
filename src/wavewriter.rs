@@ -130,7 +130,7 @@ impl<W> Write for WaveChunkWriter<W> where W: Write + Seek {
 /// 
 /// // Write a three-sample wave file to a cursor
 /// let mut cursor = Cursor::new(vec![0u8;0]);
-/// let format = WaveFmt::new_pcm(48000, 24, 1);
+/// let format = WaveFmt::new_pcm_mono(48000, 24);
 /// let w = WaveWriter::new(&mut cursor, format).unwrap();
 ///
 /// let mut frame_writer = w.audio_frame_writer().unwrap();
@@ -183,16 +183,13 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         Ok( retval )
     }
 
-    /// Create a new chunk writer, which takes posession of the `WaveWriter`.
-    /// 
-    /// Begin writing a chunk segment. To close the chunk (and perhaps write 
-    /// another), call `end()` on the chunk writer.
+
     fn chunk(mut self, ident: FourCC) -> Result<WaveChunkWriter<W>,Error> {
         self.inner.seek(SeekFrom::End(0))?;
         WaveChunkWriter::begin(self, ident)
     }
 
-    /// Write Broadcast-Wave metadata to the file.Bext
+    /// Write Broadcast-Wave metadata to the file.
     /// 
     /// This function will write the metadata chunk immediately; if you have
     /// already written and closed the audio data the bext chunk will be 
@@ -244,7 +241,7 @@ fn test_new() {
     use byteorder::ReadBytesExt;
 
     let mut cursor = Cursor::new(vec![0u8;0]);
-    let format = WaveFmt::new_pcm(4800, 24, 1);
+    let format = WaveFmt::new_pcm_mono(4800, 24);
     WaveWriter::new(&mut cursor, format).unwrap();
 
     cursor.seek(SeekFrom::Start(0)).unwrap();
@@ -270,7 +267,7 @@ fn test_write_audio() {
     use byteorder::ReadBytesExt;
 
     let mut cursor = Cursor::new(vec![0u8;0]);
-    let format = WaveFmt::new_pcm(48000, 24, 1);
+    let format = WaveFmt::new_pcm_mono(48000, 24);
     let w = WaveWriter::new(&mut cursor, format).unwrap();
     
     let mut frame_writer = w.audio_frame_writer().unwrap();
@@ -316,7 +313,7 @@ fn test_write_bext() {
     use std::io::Cursor;
 
     let mut cursor = Cursor::new(vec![0u8;0]);
-    let format = WaveFmt::new_pcm(48000, 24, 1);
+    let format = WaveFmt::new_pcm_mono(48000, 24);
     let w = WaveWriter::new(&mut cursor, format).unwrap();
 
     let bext = Bext {

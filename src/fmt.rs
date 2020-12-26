@@ -181,36 +181,57 @@ pub struct WaveFmt {
 
 
 impl WaveFmt {
+    
+    /// Create a new integer PCM format for a monoaural audio stream.
+    pub fn new_pcm_mono(sample_rate: u32, bits_per_sample: u16) -> Self {
+        Self::new_pcm_multichannel(sample_rate, bits_per_sample, 0x4)
+    }
 
-    /// Create a new integer PCM format `WaveFmt` 
-    pub fn new_pcm(sample_rate: u32, bits_per_sample: u16, channel_count: u16) -> Self {
+    /// Create a new integer PCM format for a standard Left-Right stereo audio 
+    /// stream.
+    pub fn new_pcm_stereo(sample_rate: u32, bits_per_sample: u16) -> Self {
+        Self::new_pcm_multichannel(sample_rate, bits_per_sample, 0x3)
+    }
+
+    /// Create a new integer PCM format for ambisonic b-format.
+    pub fn new_pcm_ambisonic(sample_rate: u32, bits_per_sample: u16, channel_count: u16) -> Self {
+        todo!()
+    }
+
+    /// Create a new integer PCM format `WaveFmt` with a custom channel bitmap.
+    /// 
+    /// The order of `channels` is not important. When reading or writing 
+    /// audio frames you must use the standard multichannel order for Wave 
+    /// files, the numerical order of the cases of `ChannelMask`.
+    pub fn new_pcm_multichannel(sample_rate: u32, bits_per_sample: u16, channel_bitmap: u32) -> Self {
         let container_bits_per_sample = bits_per_sample + (bits_per_sample % 8);
         let container_bytes_per_sample= container_bits_per_sample / 8;
+        
+        let channel_count: u16 = (0..=31).fold(0u16, |accum, n| accum + (0x1 & (channel_bitmap >> n) as u16) );
 
-        let tag : u16 = match channel_count {
-            1..=2 => 0x01,
-            x if x > 2 => 0xFFFE,
-            x => panic!("Invalid channel count {}", x)
+        let result : (u16, Option<WaveFmtExtended>) = match channel_bitmap {
+            ch if bits_per_sample != container_bits_per_sample => (
+                (0xFFFE, Some(WaveFmtExtended { valid_bits_per_sample: bits_per_sample, channel_mask: ch, 
+                    type_guid: UUID_PCM }) )
+            ),
+            0b0100 => (0x0001, None),
+            0b0011 => (0x0001, None),
+            ch => (
+                (0xFFFE, Some( WaveFmtExtended { valid_bits_per_sample: bits_per_sample, channel_mask: ch, 
+                    type_guid: UUID_PCM}))
+            )
         };
 
+        let (tag, extformat) = result;
+
         WaveFmt {
-            tag, 
+            tag,
             channel_count,
             sample_rate,
             bytes_per_second: container_bytes_per_sample as u32 * sample_rate * channel_count as u32,
             block_alignment: container_bytes_per_sample * channel_count,
             bits_per_sample: container_bits_per_sample,
-            extended_format: {
-                if channel_count > 2 {
-                    Some( WaveFmtExtended {
-                        channel_mask : !(0xFFFF_FFFF << channel_count),
-                        type_guid: UUID_PCM,
-                        valid_bits_per_sample: bits_per_sample
-                    })
-                } else {
-                    None
-                }
-            }
+            extended_format: extformat
         }
     }
 
