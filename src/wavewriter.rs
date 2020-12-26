@@ -101,7 +101,22 @@ impl<W> Write for WaveChunkWriter<W> where W: Write + Seek {
 
 /// Wave, Broadcast-WAV and RF64/BW64 writer.
 /// 
+/// ```
+/// use bwavfile::{WaveWriter,WaveFmt};
+/// # use std::io::Cursor;
 /// 
+/// // Write a three-sample wave file to a cursor
+/// let mut cursor = Cursor::new(vec![0u8;0]);
+/// let format = WaveFmt::new_pcm(48000, 24, 1);
+/// let w = WaveWriter::new(&mut cursor, format).unwrap();
+///
+/// let mut frame_writer = w.audio_frame_writer().unwrap();
+///
+/// frame_writer.write_integer_frame(&[0i32]).unwrap();
+/// frame_writer.write_integer_frame(&[0i32]).unwrap();
+/// frame_writer.write_integer_frame(&[0i32]).unwrap();
+/// frame_writer.end().unwrap();
+/// ``` 
 pub struct WaveWriter<W> where W: Write + Seek {
     inner : W,
     form_length: u64,
