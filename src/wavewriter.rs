@@ -2,10 +2,11 @@ use std::fs::File;
 use std::io::{Write,Seek,SeekFrom};
 
 use super::Error;
-use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, WAVE_SIG, FMT__SIG, DATA_SIG, ELM1_SIG, JUNK_SIG};
+use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, WAVE_SIG, FMT__SIG, DATA_SIG, ELM1_SIG, JUNK_SIG, BEXT_SIG};
 use super::fmt::WaveFmt;
 //use super::common_format::CommonFormat;
 use super::chunks::WriteBWaveChunks;
+use super::bext::Bext;
 
 use byteorder::LittleEndian;
 use byteorder::WriteBytesExt;
@@ -74,7 +75,6 @@ impl<W> WaveChunkWriter<W> where W: Write + Seek {
         inner.inner.write_u32::<LittleEndian>(length as u32)?;
         inner.increment_form_length(8)?;
         let content_start_pos = inner.inner.seek(SeekFrom::End(0))?;
-        //inner.inner.flush()?;
         Ok( WaveChunkWriter { inner , content_start_pos, length } )
     }
 
@@ -84,7 +84,6 @@ impl<W> WaveChunkWriter<W> where W: Write + Seek {
             self.inner.inner.write(&[0u8])?;
             self.inner.increment_form_length(1)?;
         }
-        //self.flush()?;
         Ok( self.inner )
     }
 
@@ -120,7 +119,10 @@ impl<W> Write for WaveChunkWriter<W> where W: Write + Seek {
 /// Wave, Broadcast-WAV and RF64/BW64 writer.
 /// 
 /// A WaveWriter creates a new wave file at the given path (with `create()`)
-/// or into the given `Write`- and `Seek`-able `W`
+/// or into the given `Write`- and `Seek`-able inner writer.
+/// 
+/// Audio is added to the wave file by starting the audio data chunk with
+/// `WaveWriter::audio_frame_writer()`.
 /// 
 /// ```
 /// use bwavfile::{WaveWriter,WaveFmt};
@@ -185,9 +187,20 @@ impl<W> WaveWriter<W> where W: Write + Seek {
     /// 
     /// Begin writing a chunk segment. To close the chunk (and perhaps write 
     /// another), call `end()` on the chunk writer.
-    pub fn chunk(mut self, ident: FourCC) -> Result<WaveChunkWriter<W>,Error> {
+    fn chunk(mut self, ident: FourCC) -> Result<WaveChunkWriter<W>,Error> {
         self.inner.seek(SeekFrom::End(0))?;
         WaveChunkWriter::begin(self, ident)
+    }
+
+    /// Write Broadcast-Wave metadata to the file.Bext
+    /// 
+    /// This function will write the metadata chunk immediately; if you have
+    /// already written and closed the audio data the bext chunk will be 
+    /// positioned after it.
+    fn write_broadcast_metadata(self, bext: &Bext) -> Result<Self,Error> {
+        let mut b = self.chunk(BEXT_SIG)?;
+        b.write_bext(bext)?;
+        Ok(b.end()?)
     }
 
     /// Create an audio frame writer, which takes possession of the callee 
@@ -296,6 +309,40 @@ fn test_write_audio() {
     assert!(tell % 0x4000 == 0);
 
     assert_eq!(form_size, 4 + 8 + junk_size + 8 + fmt_size + 8 + elm1_size + 8 + data_size + data_size % 2)
-    
+}
 
+#[test]
+fn test_write_bext() {
+    use std::io::Cursor;
+
+    let mut cursor = Cursor::new(vec![0u8;0]);
+    let format = WaveFmt::new_pcm(48000, 24, 1);
+    let w = WaveWriter::new(&mut cursor, format).unwrap();
+
+    let bext = Bext {
+        description: String::from("Test description"),
+        originator: String::from(""),
+        originator_reference: String::from(""),
+        origination_date: String::from("2020-01-01"),
+        origination_time: String::from("12:34:56"),
+        time_reference: 0,
+        version: 0,
+        umid: None,
+        loudness_value: None,
+        loudness_range: None,
+        max_true_peak_level: None,
+        max_momentary_loudness: None,
+        max_short_term_loudness: None,
+        coding_history: String::from(""),
+    };
+
+    let w = w.write_broadcast_metadata(&bext).unwrap();
+
+    let mut frame_writer = w.audio_frame_writer().unwrap();
+
+    frame_writer.write_integer_frame(&[0i32]).unwrap();
+    frame_writer.write_integer_frame(&[0i32]).unwrap();
+    frame_writer.write_integer_frame(&[0i32]).unwrap();
+
+    frame_writer.end().unwrap();
 }
