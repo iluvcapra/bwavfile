@@ -104,7 +104,7 @@ impl<W> WaveChunkWriter<W> where W: Write + Seek {
                 self.inner.inner.seek(SeekFrom::Start(data_chunk_64bit_field_offset))?;
                 self.inner.inner.write_u64::<LittleEndian>(self.length)?;
             } else {
-                todo!("FIXME RF64 wave writing is not yet supported")
+                todo!("FIXME RF64 wave writing is not yet supported for chunks other than `data`")
             }
             
         }
@@ -118,8 +118,8 @@ impl<W> Write for WaveChunkWriter<W> where W: Write + Seek {
     fn write(&mut self, buffer: &[u8]) -> Result<usize, std::io::Error> { 
         self.inner.inner.seek(SeekFrom::End(0))?;
         let written = self.inner.inner.write(buffer)?;
-        self.increment_chunk_length(written as u64)?;
         self.inner.increment_form_length(written as u64)?;
+        self.increment_chunk_length(written as u64)?;
 
         Ok( written )
     }
@@ -267,15 +267,17 @@ impl<W> WaveWriter<W> where W: Write + Seek {
 
     fn increment_form_length(&mut self, amount: u64) -> Result<(), std::io::Error> {
         self.form_length = self.form_length + amount;
-        if self.form_length < u32::MAX as u64 {
+        if self.is_rf64 {
+            self.inner.seek(SeekFrom::Start(8 + 4 + 8))?;
+            self.inner.write_u64::<LittleEndian>(self.form_length)?;
+        } else if self.form_length < u32::MAX as u64 {
             self.inner.seek(SeekFrom::Start(4))?;
             self.inner.write_u32::<LittleEndian>(self.form_length as u32)?;
-            Ok(())
         } else {
             self.promote_to_rf64()?;
-            todo!("FIXME RF64 wave writing is not yet supported")
+            
         }
-
+        Ok(())
     }
 
 }
@@ -389,3 +391,59 @@ fn test_write_bext() {
 
     frame_writer.end().unwrap();
 }
+
+
+// NOTE! This test of RF64 writing passes on my machine but because it takes 
+// nearly 5 mins to run I have omitted it from the source for now...
+
+// #[test]
+// fn test_create_rf64() {
+//     use std::io::Cursor;
+//     use super::fourcc::ReadFourCC;
+//     use byteorder::ReadBytesExt;
+
+//     let mut cursor = Cursor::new(vec![0u8;0]);
+//     let format = WaveFmt::new_pcm_stereo(48000, 24);
+//     let w = WaveWriter::new(&mut cursor, format).unwrap();
+
+
+//     let buf = format.create_frame_buffer();
+
+//     let four_and_a_half_hours = 48000 * 16_200; // 4,665,600,000 bytes / 777,600,000 frames
+
+//     let mut af = w.audio_frame_writer().unwrap();
+
+//     for _ in 0..four_and_a_half_hours {
+//         af.write_integer_frame(&buf).unwrap();
+//     }
+//     af.end().unwrap();
+
+//     let expected_data_length = four_and_a_half_hours * format.block_alignment as u64;
+
+//     cursor.seek(SeekFrom::Start(0)).unwrap();
+//     assert_eq!(cursor.read_fourcc().unwrap(), RF64_SIG);
+//     assert_eq!(cursor.read_u32::<LittleEndian>().unwrap(), 0xFFFF_FFFF);
+//     assert_eq!(cursor.read_fourcc().unwrap(), WAVE_SIG);
+
+//     assert_eq!(cursor.read_fourcc().unwrap(), DS64_SIG);
+//     let ds64_size = cursor.read_u32::<LittleEndian>().unwrap();
+//     let form_size = cursor.read_u64::<LittleEndian>().unwrap();
+//     let data_size = cursor.read_u64::<LittleEndian>().unwrap();
+//     assert_eq!(data_size, expected_data_length);
+//     cursor.seek(SeekFrom::Current(ds64_size as i64 - 16)).unwrap();
+
+//     assert_eq!(cursor.read_fourcc().unwrap(), FMT__SIG);
+//     let fmt_size = cursor.read_u32::<LittleEndian>().unwrap();
+//     cursor.seek(SeekFrom::Current((fmt_size + fmt_size % 2) as i64)).unwrap();
+    
+//     assert_eq!(cursor.read_fourcc().unwrap(), ELM1_SIG);
+//     let elm1_size = cursor.read_u32::<LittleEndian>().unwrap();
+//     let data_start = cursor.seek(SeekFrom::Current((elm1_size + elm1_size % 2) as i64)).unwrap();
+    
+//     assert!((data_start + 8) % 0x4000 == 0, "data content start is not aligned, starts at {}", data_start + 8);
+//     assert_eq!(cursor.read_fourcc().unwrap(), DATA_SIG);
+//     assert_eq!(cursor.read_u32::<LittleEndian>().unwrap(), 0xFFFF_FFFF);
+//     cursor.seek(SeekFrom::Current(data_size as i64)).unwrap();
+
+//     assert_eq!(4 + 8 + ds64_size as u64 + 8 + data_size + 8 + fmt_size as u64 + 8 + elm1_size as u64, form_size)
+// }

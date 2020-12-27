@@ -13,8 +13,8 @@ This is currently a work-in-progress! However many features presently work:
 | Feature                               |Read |Write|
 |---------------------------------------|:---:|:-----:|
 | Standard .wav files                   | ☑️   | ☑  ️ |
-| Transparent promotion to RF64/BW64    | ☑️   |     |
-| Unified interface for regular and extended Wave format | ☑️  |  |
+| Transparent promotion to RF64/BW64    | ☑️   | ☑️   |
+| Unified interface for regular and extended Wave format | ☑️  | ☑️  |
 | Channel/speaker map metadata          | ☑️   | ☑️   |
 | Ambisonic B-format metadata           | ☑️   | ☑️   |
 | EBU Broadcast-WAVE metadata           | ☑️   | ☑️   |
