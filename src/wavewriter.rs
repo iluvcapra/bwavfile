@@ -91,12 +91,18 @@ impl<W> WaveChunkWriter<W> where W: Write + Seek {
 
     fn increment_chunk_length(&mut self, amount: u64) -> Result<(), std::io::Error> {
         self.length = self.length + amount;
-        if self.length < u32::MAX as u64 {
+        if !self.inner.is_rf64 {
             self.inner.inner.seek(SeekFrom::Start(self.content_start_pos - 4))?;
             self.inner.inner.write_u32::<LittleEndian>(self.length as u32)?;
         } else {
             if self.ident == DATA_SIG {
-                todo!("FIXME RF64 wave writing is not yet supported")
+                let data_chunk_64bit_field_offset = 8 + 4 + 8 + 8;
+                self.inner.inner.seek(SeekFrom::Start(self.content_start_pos - 4))?;
+                self.inner.inner.write_u32::<LittleEndian>(0xFFFF_FFFF)?; 
+                    // this only need to happen once, not every time we increment
+
+                self.inner.inner.seek(SeekFrom::Start(data_chunk_64bit_field_offset))?;
+                self.inner.inner.write_u64::<LittleEndian>(self.length)?;
             } else {
                 todo!("FIXME RF64 wave writing is not yet supported")
             }
@@ -208,16 +214,17 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         Ok( retval )
     }
 
-    fn promote_to_rf64(&mut self) -> Result<(),Error> {
+    fn promote_to_rf64(&mut self) -> Result<(), std::io::Error> {
         if !self.is_rf64 {
             self.inner.seek(SeekFrom::Start(0))?;
             self.inner.write_fourcc(RF64_SIG)?;
-            self.inner.write_u32::<LittleEndian>(0xFFFF)?;
+            self.inner.write_u32::<LittleEndian>(0xFFFF_FFFF)?;
             self.inner.seek(SeekFrom::Start(12))?;
 
             self.inner.write_fourcc(DS64_SIG)?;
             self.inner.seek(SeekFrom::Current(4))?;
             self.inner.write_u64::<LittleEndian>(self.form_length)?;
+            self.is_rf64 = true;
         }
         Ok(())
     }
@@ -265,6 +272,7 @@ impl<W> WaveWriter<W> where W: Write + Seek {
             self.inner.write_u32::<LittleEndian>(self.form_length as u32)?;
             Ok(())
         } else {
+            self.promote_to_rf64()?;
             todo!("FIXME RF64 wave writing is not yet supported")
         }
 
