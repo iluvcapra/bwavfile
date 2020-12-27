@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{Write,Seek,SeekFrom};
+use std::io::{Write,Seek,SeekFrom,Cursor};
 
 use super::Error;
 use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, RF64_SIG, DS64_SIG,
@@ -16,34 +16,59 @@ use byteorder::WriteBytesExt;
 /// 
 /// 
 pub struct AudioFrameWriter<W> where W: Write + Seek {
-    inner : WaveChunkWriter<W>
+    inner : WaveChunkWriter<W>,
+    framed_bits_per_sample : u16,
+    bits_per_sample: u16,
+    channel_count: u16,
+    block_alignment: u16,
 }
 
 impl<W> AudioFrameWriter<W> where W: Write + Seek {
 
-    /// Write one audio frame.
-    /// 
-    pub fn write_integer_frame(&mut self, buffer: &[i32]) -> Result<u64,Error> {
-        let format = self.inner.inner.format;
-        assert!(buffer.len() as u16 == format.channel_count, 
-            "read_integer_frame was called with a mis-sized buffer, expected {}, was {}", 
-            format.channel_count, buffer.len());
-
-        let framed_bits_per_sample = format.block_alignment * 8 / format.channel_count;
-
-        for n in 0..(format.channel_count as usize) {
-            match (format.bits_per_sample, framed_bits_per_sample) {
-                (0..=8,8) => self.inner.write_u8((buffer[n] + 0x80) as u8 )?, // EBU 3285 §A2.2
-                (9..=16,16) => self.inner.write_i16::<LittleEndian>(buffer[n] as i16)?,
-                (10..=24,24) => self.inner.write_i24::<LittleEndian>(buffer[n])?,
-                (25..=32,32) => self.inner.write_i32::<LittleEndian>(buffer[n])?,
-                (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
-                    b, format.channel_count, format.block_alignment)
-            }
+    fn new(inner: WaveChunkWriter<W>) -> Self {
+        let fbps = inner.inner.format.bits_per_sample;
+        let ba = inner.inner.format.block_alignment;
+        let cc = inner.inner.format.channel_count;
+        let bps = inner.inner.format.valid_bits_per_sample();
+        AudioFrameWriter {
+            inner, 
+            framed_bits_per_sample: fbps,
+            bits_per_sample: bps,
+            channel_count: cc,
+            block_alignment: ba,
         }
-        self.inner.flush()?;
-        Ok(1)
     }
+
+    fn write_integer_frames_to_buffer(&self, from_frames :&[i32], to_buffer : &mut Vec<u8>) -> () {
+        let mut write_cursor = Cursor::new(to_buffer);
+
+        assert!(from_frames.len() % self.channel_count as usize == 0, 
+            "frames buffer does not contain a number of samples % channel_count == 0");
+
+            for n in 0..from_frames.len() {
+                match (self.bits_per_sample, self.framed_bits_per_sample) {
+                    (0..=8,8) => write_cursor.write_u8((from_frames[n] + 0x80) as u8 ).unwrap(), // EBU 3285 §A2.2
+                    (9..=16,16) => write_cursor.write_i16::<LittleEndian>(from_frames[n] as i16).unwrap(),
+                    (10..=24,24) => write_cursor.write_i24::<LittleEndian>(from_frames[n]).unwrap(),
+                    (25..=32,32) => write_cursor.write_i32::<LittleEndian>(from_frames[n]).unwrap(),
+                    (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
+                        b, self.channel_count, self.block_alignment)
+                }
+            }
+        ()
+    }
+
+    pub fn write_integer_frames(&mut self, buffer: &[i32]) -> Result<u64,Error> {
+        let mut write_buffer = vec![0u8; 0];
+
+        self.write_integer_frames_to_buffer(&buffer, &mut write_buffer);
+
+        self.inner.write(&write_buffer)?;
+        self.inner.flush()?;
+        Ok(write_buffer.len() as u64 / self.channel_count as u64)
+    }
+
+
 
     /// Finish writing audio frames and unwrap the inner `WaveWriter`.
     /// 
@@ -162,9 +187,9 @@ impl<W> Write for WaveChunkWriter<W> where W: Write + Seek {
 ///
 /// let mut frame_writer = w.audio_frame_writer().unwrap();
 ///
-/// frame_writer.write_integer_frame(&[0i32]).unwrap();
-/// frame_writer.write_integer_frame(&[0i32]).unwrap();
-/// frame_writer.write_integer_frame(&[0i32]).unwrap();
+/// frame_writer.write_integer_frames(&[0i32]).unwrap();
+/// frame_writer.write_integer_frames(&[0i32]).unwrap();
+/// frame_writer.write_integer_frames(&[0i32]).unwrap();
 /// frame_writer.end().unwrap();
 /// ``` 
 pub struct WaveWriter<W> where W: Write + Seek {
@@ -262,7 +287,7 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         chunk.write(&buf)?;
         let closed = chunk.end()?;
         let inner = closed.chunk(DATA_SIG)?;
-        Ok( AudioFrameWriter { inner } )
+        Ok( AudioFrameWriter::new(inner) )
     }
 
     fn increment_form_length(&mut self, amount: u64) -> Result<(), std::io::Error> {
@@ -320,9 +345,9 @@ fn test_write_audio() {
     
     let mut frame_writer = w.audio_frame_writer().unwrap();
 
-    frame_writer.write_integer_frame(&[0i32]).unwrap();
-    frame_writer.write_integer_frame(&[0i32]).unwrap();
-    frame_writer.write_integer_frame(&[0i32]).unwrap();
+    frame_writer.write_integer_frames(&[0i32]).unwrap();
+    frame_writer.write_integer_frames(&[0i32]).unwrap();
+    frame_writer.write_integer_frames(&[0i32]).unwrap();
 
     frame_writer.end().unwrap();
 
@@ -385,9 +410,9 @@ fn test_write_bext() {
 
     let mut frame_writer = w.audio_frame_writer().unwrap();
 
-    frame_writer.write_integer_frame(&[0i32]).unwrap();
-    frame_writer.write_integer_frame(&[0i32]).unwrap();
-    frame_writer.write_integer_frame(&[0i32]).unwrap();
+    frame_writer.write_integer_frames(&[0i32]).unwrap();
+    frame_writer.write_integer_frames(&[0i32]).unwrap();
+    frame_writer.write_integer_frames(&[0i32]).unwrap();
 
     frame_writer.end().unwrap();
 }
@@ -396,7 +421,7 @@ fn test_write_bext() {
 // NOTE! This test of RF64 writing passes on my machine but because it takes 
 // nearly 5 mins to run I have omitted it from the source for now...
 
-// #[test]
+#[test]
 fn test_create_rf64() {
     use std::io::Cursor;
     use super::fourcc::ReadFourCC;
@@ -406,19 +431,21 @@ fn test_create_rf64() {
     let format = WaveFmt::new_pcm_stereo(48000, 24);
     let w = WaveWriter::new(&mut cursor, format).unwrap();
 
+    let buflen = 16000 as u64;
 
-    let buf = format.create_frame_buffer();
+    let buf = vec![0i32; buflen as usize];
 
-    let four_and_a_half_hours = 48000 * 16_200; // 4,665,600,000 bytes / 777,600,000 frames
+    let four_and_a_half_hours_of_frames = 48000 * 16_200;
 
     let mut af = w.audio_frame_writer().unwrap();
 
-    for _ in 0..four_and_a_half_hours {
-        af.write_integer_frame(&buf).unwrap();
+    for _ in 0..(four_and_a_half_hours_of_frames * format.channel_count as u64 / buflen) {
+        af.write_integer_frames(&buf).unwrap();
     }
     af.end().unwrap();
 
-    let expected_data_length = four_and_a_half_hours * format.block_alignment as u64;
+    assert!(cursor.seek(SeekFrom::End(0)).unwrap() > 0xFFFF_FFFFu64, "internal test error, Created file is not long enough to be RF64" );
+    let expected_data_length = four_and_a_half_hours_of_frames * format.block_alignment as u64;
 
     cursor.seek(SeekFrom::Start(0)).unwrap();
     assert_eq!(cursor.read_fourcc().unwrap(), RF64_SIG);

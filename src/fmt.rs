@@ -182,6 +182,14 @@ pub struct WaveFmt {
 
 impl WaveFmt {
     
+    pub fn valid_bits_per_sample(&self) -> u16 {
+        if let Some(ext) = self.extended_format {
+            ext.valid_bits_per_sample
+        } else {
+            self.bits_per_sample
+        }
+    }
+
     /// Create a new integer PCM format for a monoaural audio stream.
     pub fn new_pcm_mono(sample_rate: u32, bits_per_sample: u16) -> Self {
         Self::new_pcm_multichannel(sample_rate, bits_per_sample, 0x4)
