@@ -2,7 +2,8 @@ use std::fs::File;
 use std::io::{Write,Seek,SeekFrom};
 
 use super::Error;
-use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, WAVE_SIG, FMT__SIG, DATA_SIG, ELM1_SIG, JUNK_SIG, BEXT_SIG};
+use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, RF64_SIG, DS64_SIG,
+    WAVE_SIG, FMT__SIG, DATA_SIG, ELM1_SIG, JUNK_SIG, BEXT_SIG};
 use super::fmt::WaveFmt;
 //use super::common_format::CommonFormat;
 use super::chunks::WriteBWaveChunks;
@@ -62,6 +63,7 @@ impl<W> AudioFrameWriter<W> where W: Write + Seek {
 /// When you are done writing to a chunk you must call `end()` in order to 
 /// finalize the chunk for storage.
 pub struct WaveChunkWriter<W> where W: Write + Seek {
+    ident : FourCC,
     inner : WaveWriter<W>,
     content_start_pos : u64,
     length : u64
@@ -75,7 +77,7 @@ impl<W> WaveChunkWriter<W> where W: Write + Seek {
         inner.inner.write_u32::<LittleEndian>(length as u32)?;
         inner.increment_form_length(8)?;
         let content_start_pos = inner.inner.seek(SeekFrom::End(0))?;
-        Ok( WaveChunkWriter { inner , content_start_pos, length } )
+        Ok( WaveChunkWriter { ident, inner , content_start_pos, length } )
     }
 
     fn end(mut self) -> Result<WaveWriter<W>, Error> {
@@ -93,7 +95,12 @@ impl<W> WaveChunkWriter<W> where W: Write + Seek {
             self.inner.inner.seek(SeekFrom::Start(self.content_start_pos - 4))?;
             self.inner.inner.write_u32::<LittleEndian>(self.length as u32)?;
         } else {
-            todo!("FIXME RF64 wave writing is not yet supported")
+            if self.ident == DATA_SIG {
+                todo!("FIXME RF64 wave writing is not yet supported")
+            } else {
+                todo!("FIXME RF64 wave writing is not yet supported")
+            }
+            
         }
 
         Ok(())
@@ -158,6 +165,9 @@ pub struct WaveWriter<W> where W: Write + Seek {
     inner : W,
     form_length: u64,
 
+    /// True if file is RF64
+    pub is_rf64: bool,
+
     /// Format of the wave file.
     pub format: WaveFmt
 }
@@ -183,7 +193,8 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         inner.write_u32::<LittleEndian>(0)?;
         inner.write_fourcc(WAVE_SIG)?;
 
-        let mut retval = WaveWriter { inner, form_length: 0, format};
+        let mut retval = WaveWriter { inner, form_length: 0, is_rf64: false, format};
+
         retval.increment_form_length(4)?;
 
         let mut chunk = retval.chunk(JUNK_SIG)?;
@@ -195,6 +206,20 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         let retval = chunk.end()?;
 
         Ok( retval )
+    }
+
+    fn promote_to_rf64(&mut self) -> Result<(),Error> {
+        if !self.is_rf64 {
+            self.inner.seek(SeekFrom::Start(0))?;
+            self.inner.write_fourcc(RF64_SIG)?;
+            self.inner.write_u32::<LittleEndian>(0xFFFF)?;
+            self.inner.seek(SeekFrom::Start(12))?;
+
+            self.inner.write_fourcc(DS64_SIG)?;
+            self.inner.seek(SeekFrom::Current(4))?;
+            self.inner.write_u64::<LittleEndian>(self.form_length)?;
+        }
+        Ok(())
     }
 
 
@@ -229,7 +254,6 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         let buf = vec![0u8; to_add as usize];
         chunk.write(&buf)?;
         let closed = chunk.end()?;
-
         let inner = closed.chunk(DATA_SIG)?;
         Ok( AudioFrameWriter { inner } )
     }
