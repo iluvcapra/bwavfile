@@ -118,11 +118,25 @@ impl<W> Write for WaveChunkWriter<W> where W: Write + Seek {
 
 /// Wave, Broadcast-WAV and RF64/BW64 writer.
 /// 
-/// A WaveWriter creates a new wave file at the given path (with `create()`)
+/// A `WaveWriter` creates a new wave file at the given path (with `create()`)
 /// or into the given `Write`- and `Seek`-able inner writer.
 /// 
 /// Audio is added to the wave file by starting the audio data chunk with
-/// `WaveWriter::audio_frame_writer()`.
+/// `WaveWriter::audio_frame_writer()`. All of the functions that add chunks
+/// move the WaveWriter and return it to the host when complete.
+/// 
+/// # Structure of New Wave Files
+/// 
+/// `WaveWriter` will create a Wave file with two chunks automatically: a 96
+/// byte `JUNK` chunk and a standard `fmt ` chunk, which has the extended 
+/// length if the format your provided requires it. The first `JUNK` chunk is 
+/// a reservation for a `ds64` record which will be written over it if
+/// the file needs to be upgraded to RF64 format.
+/// 
+/// Chunks are added to the file in the order the client adds them. 
+/// `audio_file_writer()` will add a `data` chunk for the audio data, and will
+/// also add an `elm1` filler chunk prior to the data chunk to ensure that the 
+/// first byte of the data chunk's content is aligned with 0x4000.
 /// 
 /// ```
 /// use bwavfile::{WaveWriter,WaveFmt};
