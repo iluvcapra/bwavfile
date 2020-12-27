@@ -1,5 +1,9 @@
 use uuid::Uuid;
 use super::common_format::{CommonFormat, UUID_PCM,UUID_BFORMAT_PCM};
+use std::io::Cursor;
+
+use byteorder::LittleEndian;
+use byteorder::WriteBytesExt;
 
 #[allow(dead_code)]
 
@@ -181,7 +185,7 @@ pub struct WaveFmt {
 
 
 impl WaveFmt {
-    
+
     pub fn valid_bits_per_sample(&self) -> u16 {
         if let Some(ext) = self.extended_format {
             ext.valid_bits_per_sample
@@ -273,6 +277,46 @@ impl WaveFmt {
     pub fn create_frame_buffer(&self) -> Vec<i32> {
         vec![0i32; self.channel_count as usize]
     }
+
+    /// Calculate the size of a byte buffer needed to hold audio data of this 
+    /// format for a given number of frames
+    pub fn buffer_length(&self, frame_count: u64) -> usize {
+        (self.block_alignment as u64 * frame_count) as usize
+    }
+
+    // Write frames into a byte vector
+    pub fn pack_frames(&self, from_frames: &[i32], into_bytes: &mut Vec<u8>) -> () {
+        let mut write_cursor = Cursor::new(into_bytes);
+
+        assert!(from_frames.len() % self.channel_count as usize == 0, 
+            "frames buffer does not contain a number of samples % channel_count == 0");
+
+            for n in 0..from_frames.len() {
+                match (self.valid_bits_per_sample(), self.bits_per_sample) {
+                    (0..=8,8) => write_cursor.write_u8((from_frames[n] + 0x80) as u8 ).unwrap(), // EBU 3285 §A2.2
+                    (9..=16,16) => write_cursor.write_i16::<LittleEndian>(from_frames[n] as i16).unwrap(),
+                    (10..=24,24) => write_cursor.write_i24::<LittleEndian>(from_frames[n]).unwrap(),
+                    (25..=32,32) => write_cursor.write_i32::<LittleEndian>(from_frames[n]).unwrap(),
+                    (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
+                        b, self.channel_count, self.block_alignment)
+                }
+            }
+        ()
+    }
+
+    /// Read bytes into frames
+    // pub fn unpack_frames(&self, from_bytes: &[u8], into_frames: &mut Vec<i32>) -> () {
+    //     for n in 0..(from_bytes.len()) {
+    //         buffer[n] = match (self.format.bits_per_sample, framed_bits_per_sample) {
+    //             (0..=8,8) => self.inner.read_u8()? as i32 - 0x80_i32, // EBU 3285 §A2.2
+    //             (9..=16,16) => self.inner.read_i16::<LittleEndian>()? as i32,
+    //             (10..=24,24) => self.inner.read_i24::<LittleEndian>()?,
+    //             (25..=32,32) => self.inner.read_i32::<LittleEndian>()?,
+    //             (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
+    //                 b, self.format.channel_count, self.format.block_alignment)
+    //         }
+    //     }
+    // }
 
 
     /// Channel descriptors for each channel.

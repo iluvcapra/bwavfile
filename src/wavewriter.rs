@@ -16,48 +16,23 @@ use byteorder::WriteBytesExt;
 /// 
 /// 
 pub struct AudioFrameWriter<W> where W: Write + Seek {
-    inner : WaveChunkWriter<W>,
-    framed_bits_per_sample : u16,
-    bits_per_sample: u16,
-    channel_count: u16,
-    block_alignment: u16,
+    inner : WaveChunkWriter<W>
 }
 
 impl<W> AudioFrameWriter<W> where W: Write + Seek {
 
     fn new(inner: WaveChunkWriter<W>) -> Self {
-        let fbps = inner.inner.format.bits_per_sample;
-        let ba = inner.inner.format.block_alignment;
-        let cc = inner.inner.format.channel_count;
-        let bps = inner.inner.format.valid_bits_per_sample();
-        AudioFrameWriter {
-            inner, 
-            framed_bits_per_sample: fbps,
-            bits_per_sample: bps,
-            channel_count: cc,
-            block_alignment: ba,
-        }
+        AudioFrameWriter { inner }
     }
 
     fn write_integer_frames_to_buffer(&self, from_frames :&[i32], to_buffer : &mut Vec<u8>) -> () {
-        let mut write_cursor = Cursor::new(to_buffer);
-
-        assert!(from_frames.len() % self.channel_count as usize == 0, 
+        assert!(from_frames.len() % self.inner.inner.format.channel_count as usize == 0, 
             "frames buffer does not contain a number of samples % channel_count == 0");
-
-            for n in 0..from_frames.len() {
-                match (self.bits_per_sample, self.framed_bits_per_sample) {
-                    (0..=8,8) => write_cursor.write_u8((from_frames[n] + 0x80) as u8 ).unwrap(), // EBU 3285 §A2.2
-                    (9..=16,16) => write_cursor.write_i16::<LittleEndian>(from_frames[n] as i16).unwrap(),
-                    (10..=24,24) => write_cursor.write_i24::<LittleEndian>(from_frames[n]).unwrap(),
-                    (25..=32,32) => write_cursor.write_i32::<LittleEndian>(from_frames[n]).unwrap(),
-                    (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
-                        b, self.channel_count, self.block_alignment)
-                }
-            }
+        self.inner.inner.format.pack_frames(&from_frames, to_buffer);
         ()
     }
 
+    /// Write interleaved samples in `buffer`
     pub fn write_integer_frames(&mut self, buffer: &[i32]) -> Result<u64,Error> {
         let mut write_buffer = vec![0u8; 0];
 
@@ -65,10 +40,8 @@ impl<W> AudioFrameWriter<W> where W: Write + Seek {
 
         self.inner.write(&write_buffer)?;
         self.inner.flush()?;
-        Ok(write_buffer.len() as u64 / self.channel_count as u64)
+        Ok(write_buffer.len() as u64 / self.inner.inner.format.channel_count as u64)
     }
-
-
 
     /// Finish writing audio frames and unwrap the inner `WaveWriter`.
     /// 
@@ -421,7 +394,7 @@ fn test_write_bext() {
 // NOTE! This test of RF64 writing passes on my machine but because it takes 
 // nearly 5 mins to run I have omitted it from the source for now...
 
-#[test]
+//#[test]
 fn test_create_rf64() {
     use std::io::Cursor;
     use super::fourcc::ReadFourCC;
