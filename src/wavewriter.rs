@@ -33,6 +33,11 @@ impl<W> AudioFrameWriter<W> where W: Write + Seek {
     }
 
     /// Write interleaved samples in `buffer`
+    /// 
+    /// # Panics
+    /// 
+    /// This function will panic if `buffer.len()` modulo the Wave file's channel count
+    /// is not zero.
     pub fn write_integer_frames(&mut self, buffer: &[i32]) -> Result<u64,Error> {
         let mut write_buffer = vec![0u8; 0];
 
@@ -237,25 +242,19 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         Ok( retval )
     }
 
-    fn promote_to_rf64(&mut self) -> Result<(), std::io::Error> {
-        if !self.is_rf64 {
-            self.inner.seek(SeekFrom::Start(0))?;
-            self.inner.write_fourcc(RF64_SIG)?;
-            self.inner.write_u32::<LittleEndian>(0xFFFF_FFFF)?;
-            self.inner.seek(SeekFrom::Start(12))?;
-
-            self.inner.write_fourcc(DS64_SIG)?;
-            self.inner.seek(SeekFrom::Current(4))?;
-            self.inner.write_u64::<LittleEndian>(self.form_length)?;
-            self.is_rf64 = true;
+    fn write_chunk(&mut self, ident: FourCC, data : &[u8]) -> Result<(),Error> {
+        self.inner.seek(SeekFrom::End(0))?;
+        self.inner.write_fourcc(ident)?;
+        assert!(data.len() < u32::MAX as usize);
+        self.inner.write_u32::<LittleEndian>(data.len() as u32)?;
+        self.inner.write(data)?;
+        if data.len() % 2 == 0 {
+            self.increment_form_length(data.len() as u64)?;
+        } else {
+            self.inner.write(&[0u8])?;
+            self.increment_form_length(data.len() as u64 + 1)?;
         }
         Ok(())
-    }
-
-
-    fn chunk(mut self, ident: FourCC) -> Result<WaveChunkWriter<W>,Error> {
-        self.inner.seek(SeekFrom::End(0))?;
-        WaveChunkWriter::begin(self, ident)
     }
 
     /// Write Broadcast-Wave metadata to the file.
@@ -263,10 +262,12 @@ impl<W> WaveWriter<W> where W: Write + Seek {
     /// This function will write the metadata chunk immediately to the end of 
     /// the file; if you have already written and closed the audio data the 
     /// bext chunk will be positioned after it.
-    fn write_broadcast_metadata(self, bext: &Bext) -> Result<Self,Error> {
-        let mut b = self.chunk(BEXT_SIG)?;
-        b.write_bext(bext)?;
-        Ok(b.end()?)
+    pub fn write_broadcast_metadata(&mut self, bext: &Bext) -> Result<(),Error> {
+        let mut c = Cursor::new(vec![0u8; 0]);
+        c.write_bext(&bext)?;
+        let buf = c.into_inner();
+        self.write_chunk(BEXT_SIG, &buf )?;
+        Ok(())
     }
 
     /// Create an audio frame writer, which takes possession of the callee 
@@ -288,6 +289,26 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         Ok( AudioFrameWriter::new(inner) )
     }
 
+    fn chunk(mut self, ident: FourCC) -> Result<WaveChunkWriter<W>,Error> {
+        self.inner.seek(SeekFrom::End(0))?;
+        WaveChunkWriter::begin(self, ident)
+    }
+
+    fn promote_to_rf64(&mut self) -> Result<(), std::io::Error> {
+        if !self.is_rf64 {
+            self.inner.seek(SeekFrom::Start(0))?;
+            self.inner.write_fourcc(RF64_SIG)?;
+            self.inner.write_u32::<LittleEndian>(0xFFFF_FFFF)?;
+            self.inner.seek(SeekFrom::Start(12))?;
+
+            self.inner.write_fourcc(DS64_SIG)?;
+            self.inner.seek(SeekFrom::Current(4))?;
+            self.inner.write_u64::<LittleEndian>(self.form_length)?;
+            self.is_rf64 = true;
+        }
+        Ok(())
+    }
+
     fn increment_form_length(&mut self, amount: u64) -> Result<(), std::io::Error> {
         self.form_length = self.form_length + amount;
         if self.is_rf64 {
@@ -302,7 +323,6 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         }
         Ok(())
     }
-
 }
 
 #[test]
@@ -385,7 +405,7 @@ fn test_write_bext() {
 
     let mut cursor = Cursor::new(vec![0u8;0]);
     let format = WaveFmt::new_pcm_mono(48000, 24);
-    let w = WaveWriter::new(&mut cursor, format).unwrap();
+    let mut w = WaveWriter::new(&mut cursor, format).unwrap();
 
     let bext = Bext {
         description: String::from("Test description"),
@@ -404,7 +424,7 @@ fn test_write_bext() {
         coding_history: String::from(""),
     };
 
-    let w = w.write_broadcast_metadata(&bext).unwrap();
+    w.write_broadcast_metadata(&bext).unwrap();
 
     let mut frame_writer = w.audio_frame_writer().unwrap();
 
@@ -421,7 +441,6 @@ fn test_write_bext() {
 
 //#[test]
 fn test_create_rf64() {
-    use std::io::Cursor;
     use super::fourcc::ReadFourCC;
     use byteorder::ReadBytesExt;
 
