@@ -232,9 +232,7 @@ impl<W> WaveWriter<W> where W: Write + Seek {
 
         retval.increment_form_length(4)?;
 
-        let mut chunk = retval.chunk(JUNK_SIG)?;
-        chunk.write(&[0u8; 96])?;
-        let retval = chunk.end()?;
+        retval.write_junk(96)?;
 
         let mut chunk = retval.chunk(FMT__SIG)?;
         chunk.write_wave_fmt(&format)?;
@@ -250,10 +248,10 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         self.inner.write_u32::<LittleEndian>(data.len() as u32)?;
         self.inner.write(data)?;
         if data.len() % 2 == 0 {
-            self.increment_form_length(data.len() as u64)?;
+            self.increment_form_length(8 + data.len() as u64)?;
         } else {
             self.inner.write(&[0u8])?;
-            self.increment_form_length(data.len() as u64 + 1)?;
+            self.increment_form_length(8 + data.len() as u64 + 1)?;
         }
         Ok(())
     }
@@ -281,10 +279,15 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         self.write_chunk(AXML_SIG, &axml)
     }
 
+    /// Write a `JUNK` filler chunk
+    pub fn write_junk(&mut self, length: u32) -> Result<(), Error> {
+        let filler = vec![0u8; length as usize];
+        self.write_chunk(JUNK_SIG, &filler)
+    }
+
     /// Create an audio frame writer, which takes possession of the callee 
     /// `WaveWriter`.
-    /// 
-    /// 
+    ///  
     pub fn audio_frame_writer(mut self) -> Result<AudioFrameWriter<W>, Error> {
         // append elm1 chunk
 
