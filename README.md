@@ -18,7 +18,7 @@ This is currently a work-in-progress! However many features presently work:
 | Channel/speaker map metadata          | ☑️   | ☑️   |
 | Ambisonic B-format metadata           | ☑️   | ☑️   |
 | EBU Broadcast-WAVE metadata           | ☑️   | ☑️   |
-| Basic iXML/ADM metadata               | ☑️   |     |
+| Basic iXML/ADM metadata               | ☑️   | ☑️   |
 | Enhanced iXML metadata support        |     |     |
 | Broadcast-WAVE Level overview `levl` metadata     |    |    |
 | Cue list metadata                     | ☑️   |     |
