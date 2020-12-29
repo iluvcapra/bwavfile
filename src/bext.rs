@@ -14,8 +14,12 @@ pub type Decibels = f32;
 ///  For a Wave file to be a complaint "Broadcast-WAV" file, it must contain
 ///  a `bext` metadata record.
 ///
-///  For reference on the structure and use of the BEXT record
-///  check out [EBU Tech 3285](https://tech.ebu.ch/docs/tech/tech3285.pdf).
+/// ## Resources
+/// - [EBU Tech 3285](https://tech.ebu.ch/docs/tech/tech3285.pdf).
+/// - [EBU Tech R098](https://tech.ebu.ch/docs/r/r098.pdf) (1999) "Format for the &lt;CodingHistory&gt; field in Broadcast Wave Format files, BWF"
+/// - [EBU Tech R099](https://tech.ebu.ch/docs/r/r099.pdf) (October 2011) "‘Unique’ Source Identifier (USID) for use in the 
+///   &lt;OriginatorReference&gt; field of the Broadcast Wave Format"
+
 #[derive(Debug)]
 pub struct Bext {
 

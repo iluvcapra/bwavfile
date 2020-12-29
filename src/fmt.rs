@@ -24,6 +24,9 @@ pub struct ADMAudioID {
 }
 
 /// Describes a single channel in a WAV file.
+/// 
+/// This information is correlated from the Wave format ChannelMap field and
+/// the `chna` chunk, if present.
 pub struct ChannelDescriptor {
     /// Index, the offset of this channel's samples in one frame.
     pub index: u16,
@@ -128,14 +131,30 @@ pub struct WaveFmtExtended {
     pub type_guid : Uuid,
 }
 
-/**
- * WAV file data format record.
- * 
- * The `fmt` record contains essential information describing the binary
- * structure of the data segment of the WAVE file, such as sample 
- * rate, sample binary format, channel count, etc.
- *
- */
+///
+/// WAV file data format record.
+///
+/// The `fmt` record contains essential information describing the binary
+/// structure of the data segment of the WAVE file, such as sample 
+/// rate, sample binary format, channel count, etc.
+///
+/// 
+/// ## Resources 
+/// 
+/// ### Implementation of Wave format `fmt` chunk
+/// - [MSDN WAVEFORMATEX](https://docs.microsoft.com/en-us/windows/win32/api/mmeapi/ns-mmeapi-waveformatex)
+/// - [MSDN WAVEFORMATEXTENSIBLE](https://docs.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible)
+///
+/// ### Other resources
+/// - [RFC 3261][rfc3261] (June 1998) "WAVE and AVI Codec Registries"
+/// - [Sampler Metadata](http://www.piclist.com/techref/io/serial/midi/wave.html)
+/// - [Peter Kabal, McGill University](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html)
+/// - [Multimedia Programming Interface and Data Specifications 1.0](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf) 
+///    (August 1991), IBM Corporation and Microsoft Corporation
+/// 
+/// [rfc3261]: https://tools.ietf.org/html/rfc2361 
+
+
 #[derive(Debug, Copy, Clone)]
 pub struct WaveFmt {
 

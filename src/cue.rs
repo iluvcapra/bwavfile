@@ -190,7 +190,11 @@ impl AdtlMemberSearch for Vec<RawAdtlMember> {
 
 /// A cue point recorded in the `cue` and `adtl` metadata.
 /// 
+/// ## Resources
+/// - [Cue list, label and other metadata](https://sites.google.com/site/musicgapi/technical-documents/wav-file-format#smpl)
 /// 
+/// ### Not Implemented
+/// - [EBU 3285 Supplement 2](https://tech.ebu.ch/docs/tech/tech3285s2.pdf) (July 2001): Quality chunk and cuesheet
 pub struct Cue {
 
     /// Unique numeric identifier for this cue

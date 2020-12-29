@@ -15,27 +15,53 @@ use std::io::Cursor;
 use std::io::{Read, Seek};
 
 
-/**
- * Wave, Broadcast-WAV and RF64/BW64 parser/reader.
- * 
- * ```
- * use bwavfile::WaveReader;
- * let mut r = WaveReader::open("tests/media/ff_silence.wav").unwrap();
- * 
- * let format = r.format().unwrap();
- * assert_eq!(format.sample_rate, 44100);
- * assert_eq!(format.channel_count, 1);
- * 
- * let mut frame_reader = r.audio_frame_reader().unwrap();
- * let mut buffer = format.create_frame_buffer();
- * 
- * let read = frame_reader.read_integer_frame(&mut buffer).unwrap();
- * 
- * assert_eq!(buffer, [0i32]);
- * assert_eq!(read, 1);
- * 
- * ```
-*/
+
+/// Wave, Broadcast-WAV and RF64/BW64 parser/reader.
+///
+/// ```
+/// use bwavfile::WaveReader; 
+/// let mut r = WaveReader::open("tests/media/ff_silence.wav").unwrap();
+///
+/// let format = r.format().unwrap();
+/// assert_eq!(format.sample_rate, 44100);
+/// assert_eq!(format.channel_count, 1);
+///
+/// let mut frame_reader = r.audio_frame_reader().unwrap();
+/// let mut buffer = format.create_frame_buffer();
+///
+/// let read = frame_reader.read_integer_frame(&mut buffer).unwrap();
+/// 
+/// assert_eq!(buffer, [0i32]);
+/// assert_eq!(read, 1);
+/// 
+/// ```
+/// 
+/// ## Resources
+/// 
+/// ### Implementation of Wave Files
+/// - [Peter Kabal, McGill University](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html)
+/// - [Multimedia Programming Interface and Data Specifications 1.0](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf) 
+///   (August 1991), IBM Corporation and Microsoft Corporation
+///  
+/// ### Implementation of Broadcast Wave Files
+/// - [EBU Tech 3285][ebu3285] (May 2011), "Specification of the Broadcast Wave Format (BWF)"
+///   - [Supplement 1](https://tech.ebu.ch/docs/tech/tech3285s1.pdf) (July 1997): MPEG Audio
+///   - [EBU Rec 68](https://tech.ebu.ch/docs/r/r068.pdf): Signal modulation and format constraints
+///
+/// ### Implementation of 64-bit Wave Files
+/// - [ITU-R 2088][itu2088] (October 2019), "Long-form file format for the international exchange of audio programme materials with metadata"
+///   - Presently in force, adopted by the EBU in [EBU Tech 3306v2][ebu3306v2] (June 2018).
+/// - [EBU Tech 3306v1][ebu3306v1] (July 2009), "MBWF / RF64: An extended File Format for Audio"
+///   - No longer in force, however long-established.
+/// 
+///
+/// [ebu3285]: https://tech.ebu.ch/docs/tech/tech3285.pdf
+/// [ebu3306v1]: https://tech.ebu.ch/docs/tech/tech3306v1_1.pdf
+/// [ebu3306v2]: https://tech.ebu.ch/docs/tech/tech3306.pdf
+/// [itu2088]: https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.2088-1-201910-I!!PDF-E.pdf
+/// [rfc3261]: https://tools.ietf.org/html/rfc2361 
+
+
 #[derive(Debug)]
 pub struct WaveReader<R: Read + Seek> {
     pub inner: R,
