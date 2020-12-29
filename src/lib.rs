@@ -3,6 +3,23 @@
  
 Rust Wave File Reader/Writer with Broadcast-WAV, MBWF and RF64 Support
 
+## Interfaces
+
+### `WaveReader`
+
+`WaveReader` can open and parse a Wave, Broadcast-Wave, or RF64/BW64 64-bit 
+wave file. Metadata can be accessed and parsed in arbitrary order and audio
+samples can be accessed using the `AudioFrameReader` type, created by an 
+accessor method of `WaveReader`.
+
+### `WaveWriter`
+
+`WaveWriter` can create a new Wave, Broadcast-Wave, or RF64/BW64 64-bit wave 
+file. Metadata chunks and audio samples are added sequentially, write-only, to 
+a Wave file which is automatically promoted from standard Wave to RF64 wave 
+when the total WAVE form size exceeds 0xFFFFFFFF bytes.
+
+
 ## Objectives and Roadmap
 
 This package aims to support read and writing any kind of WAV file you are likely 
