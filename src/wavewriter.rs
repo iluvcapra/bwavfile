@@ -3,7 +3,8 @@ use std::io::{Write,Seek,SeekFrom,Cursor};
 
 use super::Error;
 use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, RF64_SIG, DS64_SIG,
-    WAVE_SIG, FMT__SIG, DATA_SIG, ELM1_SIG, JUNK_SIG, BEXT_SIG};
+    WAVE_SIG, FMT__SIG, DATA_SIG, ELM1_SIG, JUNK_SIG, BEXT_SIG,AXML_SIG, 
+    IXML_SIG};
 use super::fmt::WaveFmt;
 //use super::common_format::CommonFormat;
 use super::chunks::WriteBWaveChunks;
@@ -268,6 +269,16 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         let buf = c.into_inner();
         self.write_chunk(BEXT_SIG, &buf )?;
         Ok(())
+    }
+
+    /// Write iXML metadata
+    pub fn write_ixml(&mut self, ixml: &[u8]) -> Result<(),Error> {
+        self.write_chunk(IXML_SIG, &ixml)
+    }
+
+    /// Write axml/ADM metadata
+    pub fn write_axml(&mut self, axml: &[u8]) -> Result<(), Error> {
+        self.write_chunk(AXML_SIG, &axml)
     }
 
     /// Create an audio frame writer, which takes possession of the callee 

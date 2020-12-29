@@ -3,7 +3,8 @@ use std::io::SeekFrom;
 use std::fs::File;
 
 use super::parser::Parser;
-use super::fourcc::{FourCC, ReadFourCC, FMT__SIG,DATA_SIG, BEXT_SIG, LIST_SIG, JUNK_SIG, FLLR_SIG, CUE__SIG, ADTL_SIG};
+use super::fourcc::{FourCC, ReadFourCC, FMT__SIG,DATA_SIG, BEXT_SIG, LIST_SIG, JUNK_SIG, FLLR_SIG, CUE__SIG, 
+    ADTL_SIG, AXML_SIG, IXML_SIG};
 use super::errors::Error as ParserError;
 use super::fmt::{WaveFmt, ChannelDescriptor, ChannelMask};
 use super::bext::Bext;
@@ -250,8 +251,7 @@ impl<R: Read + Seek> WaveReader<R> {
     /// If there are no iXML metadata present in the file, 
     /// Ok(0) will be returned.
     pub fn read_ixml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
-        let ixml_fourcc = FourCC::make(b"iXML");
-        self.read_chunk(ixml_fourcc, 0, buffer) 
+        self.read_chunk(IXML_SIG, 0, buffer) 
     }
 
     /// Read AXML data.
@@ -262,8 +262,7 @@ impl<R: Read + Seek> WaveReader<R> {
     /// If there are no axml metadata present in the file, 
     /// Ok(0) will be returned
     pub fn read_axml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
-        let axml_fourcc = FourCC::make(b"axml");
-        self.read_chunk(axml_fourcc, 0, buffer)
+        self.read_chunk(AXML_SIG, 0, buffer)
     }
 
 
