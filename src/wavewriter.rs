@@ -456,9 +456,7 @@ fn test_write_bext() {
 }
 
 
-// NOTE! This test of RF64 writing passes on my machine but because it takes 
-// nearly 5 mins to run I have omitted it from the source for now...
-
+// NOTE! This test of RF64 writing takes several minutes to complete.
 #[test]
 fn test_create_rf64() {
     use super::fourcc::ReadFourCC;
