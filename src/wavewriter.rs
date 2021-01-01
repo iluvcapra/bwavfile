@@ -459,7 +459,7 @@ fn test_write_bext() {
 // NOTE! This test of RF64 writing passes on my machine but because it takes 
 // nearly 5 mins to run I have omitted it from the source for now...
 
-//#[test]
+#[test]
 fn test_create_rf64() {
     use super::fourcc::ReadFourCC;
     use byteorder::ReadBytesExt;
