@@ -5,6 +5,7 @@ use std::io::Cursor;
 use byteorder::LittleEndian;
 use byteorder::WriteBytesExt;
 
+// Need more test cases for ADMAudioID
 #[allow(dead_code)]
 
 /// ADM Audio ID record.
