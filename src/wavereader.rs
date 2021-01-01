@@ -3,7 +3,8 @@ use std::io::SeekFrom;
 use std::fs::File;
 
 use super::parser::Parser;
-use super::fourcc::{FourCC, ReadFourCC, FMT__SIG,DATA_SIG, BEXT_SIG, LIST_SIG, JUNK_SIG, FLLR_SIG, CUE__SIG, ADTL_SIG};
+use super::fourcc::{FourCC, ReadFourCC, FMT__SIG,DATA_SIG, BEXT_SIG, LIST_SIG, JUNK_SIG, FLLR_SIG, CUE__SIG, 
+    ADTL_SIG, AXML_SIG, IXML_SIG};
 use super::errors::Error as ParserError;
 use super::fmt::{WaveFmt, ChannelDescriptor, ChannelMask};
 use super::bext::Bext;
@@ -15,39 +16,64 @@ use std::io::Cursor;
 use std::io::{Read, Seek};
 
 
-/**
- * Wave, Broadcast-WAV and RF64/BW64 parser/reader.
- * 
- * ```
- * use bwavfile::WaveReader;
- * let mut r = WaveReader::open("tests/media/ff_silence.wav").unwrap();
- * 
- * let format = r.format().unwrap();
- * assert_eq!(format.sample_rate, 44100);
- * assert_eq!(format.channel_count, 1);
- * 
- * let mut frame_reader = r.audio_frame_reader().unwrap();
- * let mut buffer = format.create_frame_buffer();
- * 
- * let read = frame_reader.read_integer_frame(&mut buffer).unwrap();
- * 
- * assert_eq!(buffer, [0i32]);
- * assert_eq!(read, 1);
- * 
- * ```
-*/
+
+/// Wave, Broadcast-WAV and RF64/BW64 parser/reader.
+///
+/// ```
+/// use bwavfile::WaveReader; 
+/// let mut r = WaveReader::open("tests/media/ff_silence.wav").unwrap();
+///
+/// let format = r.format().unwrap();
+/// assert_eq!(format.sample_rate, 44100);
+/// assert_eq!(format.channel_count, 1);
+///
+/// let mut frame_reader = r.audio_frame_reader().unwrap();
+/// let mut buffer = format.create_frame_buffer();
+///
+/// let read = frame_reader.read_integer_frame(&mut buffer).unwrap();
+/// 
+/// assert_eq!(buffer, [0i32]);
+/// assert_eq!(read, 1);
+/// 
+/// ```
+/// 
+/// ## Resources
+/// 
+/// ### Implementation of Wave Files
+/// - [Peter Kabal, McGill University](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html)
+/// - [Multimedia Programming Interface and Data Specifications 1.0](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf) 
+///   (August 1991), IBM Corporation and Microsoft Corporation
+///  
+/// ### Implementation of Broadcast Wave Files
+/// - [EBU Tech 3285][ebu3285] (May 2011), "Specification of the Broadcast Wave Format (BWF)"
+///   - [Supplement 1](https://tech.ebu.ch/docs/tech/tech3285s1.pdf) (July 1997): MPEG Audio
+///   - [EBU Rec 68](https://tech.ebu.ch/docs/r/r068.pdf): Signal modulation and format constraints
+///
+/// ### Implementation of 64-bit Wave Files
+/// - [ITU-R 2088][itu2088] (October 2019), "Long-form file format for the international exchange of audio programme materials with metadata"
+///   - Presently in force, adopted by the EBU in [EBU Tech 3306v2][ebu3306v2] (June 2018).
+/// - [EBU Tech 3306v1][ebu3306v1] (July 2009), "MBWF / RF64: An extended File Format for Audio"
+///   - No longer in force, however long-established.
+/// 
+///
+/// [ebu3285]: https://tech.ebu.ch/docs/tech/tech3285.pdf
+/// [ebu3306v1]: https://tech.ebu.ch/docs/tech/tech3306v1_1.pdf
+/// [ebu3306v2]: https://tech.ebu.ch/docs/tech/tech3306.pdf
+/// [itu2088]: https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.2088-1-201910-I!!PDF-E.pdf
+/// [rfc3261]: https://tools.ietf.org/html/rfc2361 
+
+
 #[derive(Debug)]
 pub struct WaveReader<R: Read + Seek> {
     pub inner: R,
 }
 
 impl WaveReader<File> {
-    /**
-     * Open a file for reading.
-     * 
-     * A convenience that opens `path` and calls `Self::new()`
-     *   
-     */
+    
+     /// Open a file for reading.
+     ///
+     /// A convenience that opens `path` and calls `Self::new()`
+     
     pub fn open(path: &str) -> Result<Self, ParserError> {
         let inner = File::open(path)?;
         return Ok( Self::new(inner)? )
@@ -55,48 +81,45 @@ impl WaveReader<File> {
 }
 
 impl<R: Read + Seek> WaveReader<R> {
-    /**
-     * Wrap a `Read` struct in a new `WaveReader`.
-     * 
-     * This is the primary entry point into the `WaveReader` interface. The
-     * stream passed as `inner` must be at the beginning of the header of the
-     * WAVE data. For a .wav file, this means it must be at the start of the 
-     * file.
-     * 
-     * This function does a minimal validation on the provided stream and
-     * will return an `Err(errors::Error)` immediately if there is a structural 
-     * inconsistency that makes the stream unreadable or if it's missing 
-     * essential components that make interpreting the audio data impossible.
-     * 
-     * ```rust
-     * use std::fs::File;
-     * use std::io::{Error,ErrorKind};
-     * use bwavfile::{WaveReader, Error as WavError};
-     * 
-     * let f = File::open("tests/media/error.wav").unwrap();
-     * 
-     * let reader = WaveReader::new(f);
-     * 
-     * match reader {
-     *      Ok(_) => panic!("error.wav should not be openable"),
-     *      Err( WavError::IOError( e ) ) => {
-     *          assert_eq!(e.kind(), ErrorKind::UnexpectedEof)
-     *      }
-     *      Err(e) => panic!("Unexpected error was returned {:?}", e)
-     * }
-     * 
-     * ```
-     * 
-    */
+    
+    /// Wrap a `Read` struct in a new `WaveReader`.
+    /// 
+    /// This is the primary entry point into the `WaveReader` interface. The
+    /// stream passed as `inner` must be at the beginning of the header of the
+    /// WAVE data. For a .wav file, this means it must be at the start of the 
+    /// file.
+    ///
+    /// This function does a minimal validation on the provided stream and
+    /// will return an `Err(errors::Error)` immediately if there is a structural 
+    /// inconsistency that makes the stream unreadable or if it's missing 
+    /// essential components that make interpreting the audio data impossible.
+     
+    /// ```rust
+    /// use std::fs::File;
+    /// use std::io::{Error,ErrorKind};
+    /// use bwavfile::{WaveReader, Error as WavError};
+    ///
+    /// let f = File::open("tests/media/error.wav").unwrap();
+    ///
+    /// let reader = WaveReader::new(f);
+    ///
+    /// match reader {
+    ///      Ok(_) => panic!("error.wav should not be openable"),
+    ///      Err( WavError::IOError( e ) ) => {
+    ///          assert_eq!(e.kind(), ErrorKind::UnexpectedEof)
+    ///      }
+    ///      Err(e) => panic!("Unexpected error was returned {:?}", e)
+    /// }
+    /// 
+    /// ```
     pub fn new(inner: R) -> Result<Self,ParserError> {
         let mut retval = Self { inner };
         retval.validate_readable()?;
         Ok(retval)
     }
 
-    /**
-     * Unwrap the inner reader.
-     */
+    
+    /// Unwrap the inner reader.
     pub fn into_inner(self) -> R {
         return self.inner;
     }
@@ -110,9 +133,8 @@ impl<R: Read + Seek> WaveReader<R> {
         Ok(AudioFrameReader::new(self.inner, format, audio_chunk_reader.0, audio_chunk_reader.1)?)
     }
 
-    /**
-     * The count of audio frames in the file.
-     */
+    
+    /// The count of audio frames in the file.
     pub fn frame_length(&mut self) -> Result<u64, ParserError> {
         let (_, data_length ) = self.get_chunk_extent_at_index(DATA_SIG, 0)?;
         let format = self.format()?;
@@ -128,7 +150,6 @@ impl<R: Read + Seek> WaveReader<R> {
         self.inner.read_wave_fmt()
     }
 
-    ///
     /// The Broadcast-WAV metadata record for this file, if present.
     /// 
     pub fn broadcast_extension(&mut self) -> Result<Option<Bext>, ParserError> {
@@ -224,8 +245,7 @@ impl<R: Read + Seek> WaveReader<R> {
     /// If there are no iXML metadata present in the file, 
     /// Ok(0) will be returned.
     pub fn read_ixml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
-        let ixml_fourcc = FourCC::make(b"iXML");
-        self.read_chunk(ixml_fourcc, 0, buffer) 
+        self.read_chunk(IXML_SIG, 0, buffer) 
     }
 
     /// Read AXML data.
@@ -236,8 +256,7 @@ impl<R: Read + Seek> WaveReader<R> {
     /// If there are no axml metadata present in the file, 
     /// Ok(0) will be returned
     pub fn read_axml(&mut self, buffer: &mut Vec<u8>) -> Result<usize, ParserError> {
-        let axml_fourcc = FourCC::make(b"axml");
-        self.read_chunk(axml_fourcc, 0, buffer)
+        self.read_chunk(AXML_SIG, 0, buffer)
     }
 
 
@@ -260,35 +279,33 @@ impl<R: Read + Seek> WaveReader<R> {
         }
     }
 
-    /** 
-     * Validate minimal WAVE file.
-     * 
-     * `Ok(())` if the source is `validate_readable()` AND
-     * 
-     *   - Contains _only_ a `fmt` chunk and `data` chunk, with no other chunks present
-     *   - `fmt` chunk is exactly 16 bytes long and begins _exactly_ at file offset 12
-     *   - `data` content begins _exactly_ at file offset 36
-     *   - is not an RF64/BW64
-     * 
-     * Some clients require a WAVE file to only contain format and data without any other
-     * metadata and this function is provided to validate this condition.
-     * 
-     * ### Examples
-     * 
-     * ```
-     * # use bwavfile::WaveReader;
-     * 
-     * let mut w = WaveReader::open("tests/media/ff_minimal.wav").unwrap();
-     * w.validate_minimal().expect("Minimal wav did not validate not minimal!");
-     * ```
-     * 
-     * ```
-     * # use bwavfile::WaveReader;
-     * 
-     * let mut x = WaveReader::open("tests/media/pt_24bit_51.wav").unwrap();
-     * x.validate_minimal().expect_err("Complex WAV validated minimal!");
-     * ```
-    */
+    /// Validate minimal WAVE file.
+    ///
+    /// `Ok(())` if the source is `validate_readable()` AND
+    ///
+    ///   - Contains _only_ a `fmt` chunk and `data` chunk, with no other chunks present
+    ///   - `fmt` chunk is exactly 16 bytes long and begins _exactly_ at file offset 12
+    ///   - `data` content begins _exactly_ at file offset 36
+    ///   - is not an RF64/BW64
+    ///
+    /// Some clients require a WAVE file to only contain format and data without any other
+    /// metadata and this function is provided to validate this condition.
+    ///
+    /// ### Examples
+    ///
+    /// ```
+    /// # use bwavfile::WaveReader;
+    ///
+    /// let mut w = WaveReader::open("tests/media/ff_minimal.wav").unwrap();
+    /// w.validate_minimal().expect("Minimal wav did not validate not minimal!");
+    /// ```
+    ///
+    /// ```
+    /// # use bwavfile::WaveReader;
+    ///
+    /// let mut x = WaveReader::open("tests/media/pt_24bit_51.wav").unwrap();
+    /// x.validate_minimal().expect_err("Complex WAV validated minimal!");
+    /// ```
     pub fn validate_minimal(&mut self) -> Result<(), ParserError>  {
         self.validate_readable()?;
 
@@ -302,39 +319,37 @@ impl<R: Read + Seek> WaveReader<R> {
         }
     }
 
-    /**
-     * Validate Broadcast-WAVE file format
-     * 
-     * Returns `Ok(())` if `validate_readable()` and file contains a 
-     * Broadcast-WAV metadata record (a `bext` chunk).
-     * 
-     * ### Examples
-     * 
-     * ```
-     * # use bwavfile::WaveReader;
-     * 
-     * let mut w = WaveReader::open("tests/media/ff_bwav_stereo.wav").unwrap();
-     * w.validate_broadcast_wave().expect("BWAVE file did not validate BWAVE");
-     * 
-     * let mut x = WaveReader::open("tests/media/pt_24bit.wav").unwrap();
-     * x.validate_broadcast_wave().expect("BWAVE file did not validate BWAVE");
-     * 
-     * let mut y = WaveReader::open("tests/media/audacity_16bit.wav").unwrap();
-     * y.validate_broadcast_wave().expect_err("Plain WAV file DID validate BWAVE");
-     * ```
-    */
+    /// Validate Broadcast-WAVE file format
+    /// 
+    /// Returns `Ok(())` if `validate_readable()` and file contains a 
+    /// Broadcast-WAV metadata record (a `bext` chunk).
+    /// 
+    /// ### Examples
+    /// 
+    /// ```
+    /// # use bwavfile::WaveReader;
+    /// 
+    /// let mut w = WaveReader::open("tests/media/ff_bwav_stereo.wav").unwrap();
+    /// w.validate_broadcast_wave().expect("BWAVE file did not validate BWAVE");
+    /// 
+    /// let mut x = WaveReader::open("tests/media/pt_24bit.wav").unwrap();
+    /// x.validate_broadcast_wave().expect("BWAVE file did not validate BWAVE");
+    /// 
+    /// let mut y = WaveReader::open("tests/media/audacity_16bit.wav").unwrap();
+    /// y.validate_broadcast_wave().expect_err("Plain WAV file DID validate BWAVE");
+    /// ```
+    ///
     pub fn validate_broadcast_wave(&mut self) -> Result<(), ParserError> {
         self.validate_readable()?;
         let (_, _) = self.get_chunk_extent_at_index(BEXT_SIG, 0)?;
         Ok(())
     } 
 
-    /**
-     * Verify data is aligned to a block boundary.
-     * 
-     * Returns `Ok(())` if `validate_readable()` and the start of the 
-     * `data` chunk's content begins at 0x4000.
-    */
+    ///
+    /// Verify data is aligned to a block boundary.
+    ///
+    /// Returns `Ok(())` if `validate_readable()` and the start of the 
+    /// `data` chunk's content begins at 0x4000.
     pub fn validate_data_chunk_alignment(&mut self) -> Result<() , ParserError> {
         self.validate_readable()?;
         let (start, _) = self.get_chunk_extent_at_index(DATA_SIG, 0)?;
@@ -345,15 +360,13 @@ impl<R: Read + Seek> WaveReader<R> {
         }
     }
 
-    /**
-     * Verify audio data can be appended immediately to this file.
-     * 
-     * Returns `Ok(())` if:
-     *  - `validate_readable()`
-     *  - there is a `JUNK` or `FLLR` immediately at the beginning of the chunk 
-     *    list adequately large enough to be overwritten by a `ds64` (92 bytes)
-     *  - `data` is the final chunk
-    */
+    /// Verify audio data can be appended immediately to this file.
+    /// 
+    /// Returns `Ok(())` if:
+    ///  - `validate_readable()`
+    ///  - there is a `JUNK` or `FLLR` immediately at the beginning of the chunk 
+    ///    list adequately large enough to be overwritten by a `ds64` (92 bytes)
+    ///  - `data` is the final chunk
     pub fn validate_prepared_for_append(&mut self) -> Result<(), ParserError> {
         self.validate_readable()?;
 

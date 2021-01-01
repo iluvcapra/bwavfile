@@ -1,6 +1,11 @@
 use uuid::Uuid;
 use super::common_format::{CommonFormat, UUID_PCM,UUID_BFORMAT_PCM};
+use std::io::Cursor;
 
+use byteorder::LittleEndian;
+use byteorder::WriteBytesExt;
+
+// Need more test cases for ADMAudioID
 #[allow(dead_code)]
 
 /// ADM Audio ID record.
@@ -20,6 +25,9 @@ pub struct ADMAudioID {
 }
 
 /// Describes a single channel in a WAV file.
+/// 
+/// This information is correlated from the Wave format ChannelMap field and
+/// the `chna` chunk, if present.
 pub struct ChannelDescriptor {
     /// Index, the offset of this channel's samples in one frame.
     pub index: u16,
@@ -124,14 +132,30 @@ pub struct WaveFmtExtended {
     pub type_guid : Uuid,
 }
 
-/**
- * WAV file data format record.
- * 
- * The `fmt` record contains essential information describing the binary
- * structure of the data segment of the WAVE file, such as sample 
- * rate, sample binary format, channel count, etc.
- *
- */
+///
+/// WAV file data format record.
+///
+/// The `fmt` record contains essential information describing the binary
+/// structure of the data segment of the WAVE file, such as sample 
+/// rate, sample binary format, channel count, etc.
+///
+/// 
+/// ## Resources 
+/// 
+/// ### Implementation of Wave format `fmt` chunk
+/// - [MSDN WAVEFORMATEX](https://docs.microsoft.com/en-us/windows/win32/api/mmeapi/ns-mmeapi-waveformatex)
+/// - [MSDN WAVEFORMATEXTENSIBLE](https://docs.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible)
+///
+/// ### Other resources
+/// - [RFC 3261][rfc3261] (June 1998) "WAVE and AVI Codec Registries"
+/// - [Sampler Metadata](http://www.piclist.com/techref/io/serial/midi/wave.html)
+/// - [Peter Kabal, McGill University](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html)
+/// - [Multimedia Programming Interface and Data Specifications 1.0](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf) 
+///    (August 1991), IBM Corporation and Microsoft Corporation
+/// 
+/// [rfc3261]: https://tools.ietf.org/html/rfc2361 
+
+
 #[derive(Debug, Copy, Clone)]
 pub struct WaveFmt {
 
@@ -181,7 +205,15 @@ pub struct WaveFmt {
 
 
 impl WaveFmt {
-    
+
+    pub fn valid_bits_per_sample(&self) -> u16 {
+        if let Some(ext) = self.extended_format {
+            ext.valid_bits_per_sample
+        } else {
+            self.bits_per_sample
+        }
+    }
+
     /// Create a new integer PCM format for a monoaural audio stream.
     pub fn new_pcm_mono(sample_rate: u32, bits_per_sample: u16) -> Self {
         Self::new_pcm_multichannel(sample_rate, bits_per_sample, 0x4)
@@ -265,6 +297,46 @@ impl WaveFmt {
     pub fn create_frame_buffer(&self) -> Vec<i32> {
         vec![0i32; self.channel_count as usize]
     }
+
+    /// Calculate the size of a byte buffer needed to hold audio data of this 
+    /// format for a given number of frames
+    pub fn buffer_length(&self, frame_count: u64) -> usize {
+        (self.block_alignment as u64 * frame_count) as usize
+    }
+
+    // Write frames into a byte vector
+    pub fn pack_frames(&self, from_frames: &[i32], into_bytes: &mut Vec<u8>) -> () {
+        let mut write_cursor = Cursor::new(into_bytes);
+
+        assert!(from_frames.len() % self.channel_count as usize == 0, 
+            "frames buffer does not contain a number of samples % channel_count == 0");
+
+            for n in 0..from_frames.len() {
+                match (self.valid_bits_per_sample(), self.bits_per_sample) {
+                    (0..=8,8) => write_cursor.write_u8((from_frames[n] + 0x80) as u8 ).unwrap(), // EBU 3285 §A2.2
+                    (9..=16,16) => write_cursor.write_i16::<LittleEndian>(from_frames[n] as i16).unwrap(),
+                    (10..=24,24) => write_cursor.write_i24::<LittleEndian>(from_frames[n]).unwrap(),
+                    (25..=32,32) => write_cursor.write_i32::<LittleEndian>(from_frames[n]).unwrap(),
+                    (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
+                        b, self.channel_count, self.block_alignment)
+                }
+            }
+        ()
+    }
+
+    /// Read bytes into frames
+    // pub fn unpack_frames(&self, from_bytes: &[u8], into_frames: &mut Vec<i32>) -> () {
+    //     for n in 0..(from_bytes.len()) {
+    //         buffer[n] = match (self.format.bits_per_sample, framed_bits_per_sample) {
+    //             (0..=8,8) => self.inner.read_u8()? as i32 - 0x80_i32, // EBU 3285 §A2.2
+    //             (9..=16,16) => self.inner.read_i16::<LittleEndian>()? as i32,
+    //             (10..=24,24) => self.inner.read_i24::<LittleEndian>()?,
+    //             (25..=32,32) => self.inner.read_i32::<LittleEndian>()?,
+    //             (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
+    //                 b, self.format.channel_count, self.format.block_alignment)
+    //         }
+    //     }
+    // }
 
 
     /// Channel descriptors for each channel.

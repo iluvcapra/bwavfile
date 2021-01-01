@@ -12,18 +12,19 @@ This is currently a work-in-progress! However many features presently work:
 
 | Feature                               |Read |Write|
 |---------------------------------------|:---:|:-----:|
-| Standard .wav files                   | ☑️   | ☑  ️ |
+| Standard .wav files                   | ☑️   | ☑️   |
 | Transparent promotion to RF64/BW64    | ☑️   | ☑️   |
 | Unified interface for regular and extended Wave format | ☑️   | ☑️   |
 | Channel/speaker map metadata          | ☑️   | ☑️   |
 | Ambisonic B-format metadata           | ☑️   | ☑️   |
 | EBU Broadcast-WAVE metadata           | ☑️   | ☑️   |
-| Basic iXML/ADM metadata               | ☑️   |     |
+| Basic iXML/ADM metadata               | ☑️   | ☑️   |
 | Enhanced iXML metadata support        |     |     |
+| ADM `chna` channel metadata           |     |     |
 | Broadcast-WAVE Level overview `levl` metadata     |    |    |
 | Cue list metadata                     | ☑️   |     |
 | Sampler and instrument metadata       |     |     |
-| Enhanced Wave file form validation    | ☑ ️  |     |
+| Enhanced Wave file form validation    | ☑️   |     |
 
 
 ## Use Examples
@@ -69,3 +70,9 @@ All of the media for the integration tests is committed to the respository
 in zipped form. Before you can run tests, you need to `cd` into the `tests` 
 directory and run the `create_test_media.sh` script. Note that one of the 
 test files (the RF64 test case) is over four gigs in size.
+
+Likewise, [the RF64 _writing_ test case][rf64test] writes an RF64 wave file 
+to memory and is very time-intensive, so is commented-out in the code but 
+can be un-commented if you want to run it on your system. 
+
+[rf64test]: https://github.com/iluvcapra/bwavfile/blob/1f8542a7efb481da076120bf8107032c5b48889d/src/wavewriter.rs#L399

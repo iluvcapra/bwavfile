@@ -103,6 +103,8 @@ pub const FMT__SIG: FourCC = FourCC::make(b"fmt ");
 
 pub const BEXT_SIG: FourCC = FourCC::make(b"bext");
 //pub const FACT_SIG: FourCC = FourCC::make(b"fact");
+pub const IXML_SIG: FourCC = FourCC::make(b"iXML");
+pub const AXML_SIG: FourCC = FourCC::make(b"axml");
 
 pub const JUNK_SIG: FourCC = FourCC::make(b"JUNK");
 pub const FLLR_SIG: FourCC = FourCC::make(b"FLLR");
