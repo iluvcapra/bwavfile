@@ -207,6 +207,8 @@ pub struct WaveWriter<W> where W: Write + Seek {
     pub format: WaveFmt
 }
 
+const DS64_RESERVATION_LENGTH : u32 = 96;
+
 impl WaveWriter<File> {
 
     /// Create a new Wave file at `path`.
@@ -232,7 +234,8 @@ impl<W> WaveWriter<W> where W: Write + Seek {
 
         retval.increment_form_length(4)?;
 
-        retval.write_junk(96)?;
+        // write ds64_reservation
+        retval.write_junk(DS64_RESERVATION_LENGTH)?;
 
         let mut chunk = retval.chunk(FMT__SIG)?;
         chunk.write_wave_fmt(&format)?;
