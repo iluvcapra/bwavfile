@@ -303,11 +303,13 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         Ok( AudioFrameWriter::new(inner) )
     }
 
+    /// Open a wave chunk writer here
     fn chunk(mut self, ident: FourCC) -> Result<WaveChunkWriter<W>,Error> {
         self.inner.seek(SeekFrom::End(0))?;
         WaveChunkWriter::begin(self, ident)
     }
 
+    /// Upgrade this file to RF64
     fn promote_to_rf64(&mut self) -> Result<(), std::io::Error> {
         if !self.is_rf64 {
             self.inner.seek(SeekFrom::Start(0))?;
@@ -323,6 +325,7 @@ impl<W> WaveWriter<W> where W: Write + Seek {
         Ok(())
     }
 
+    /// Add `amount` to the RIFF/RF64 form length
     fn increment_form_length(&mut self, amount: u64) -> Result<(), std::io::Error> {
         self.form_length = self.form_length + amount;
         if self.is_rf64 {
