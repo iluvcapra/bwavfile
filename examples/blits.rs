@@ -35,9 +35,9 @@ fn dbfs_to_signed_int(dbfs: f32, bit_depth: u32) -> i32 {
 
 #[derive(Clone, Copy, PartialEq)]
 enum ToneBurst {
-    /// Tone of .0 frequency for .1 duration at .2 dBfs
+    /// Tone of .0 frequency (hz) for .1 duration (ms) at .2 dBfs
     Tone(f32, u64, f32),
-    /// Silence of .0 Duration
+    /// Silence of .0 Duration (ms)
     Silence(u64),
 }
 
