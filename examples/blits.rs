@@ -6,6 +6,7 @@
 //! alignment signal.
 //! 
 //! TODO: Pre-calculate the sine waves to speed up generation
+//! TODO: Implement command-line interface
 
 use std::f64;
 use bwavfile::{WaveWriter, WaveFmt};
