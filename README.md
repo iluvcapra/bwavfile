@@ -29,6 +29,13 @@ This is currently a work-in-progress! However many features presently work:
 
 ## Use Examples
 
+### Examples Directory
+
+Check out the [examples](examples) directory for some practical use cases:
+
+  * [blits](examples/blits.rs) shows how to use `WaveWriter` to create a new
+    file with BLITS alignment tones.
+
 ### Reading Audio Frames From a File
 
 ```rust
