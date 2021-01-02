@@ -4,15 +4,16 @@
 //! This program demonstrates combining several wave files into a single
 //! polyphonic wave file.
 
-extern crate clap;
-
 use std::io;
+
+#[macro_use]
+extern crate clap;
 use clap::{Arg, App};
 
 fn main() -> io::Result<()> {
     let matches = App::new("wave-inter")
-        .version("0.1")
-        .author("Jamie Hardt")
+        .version(crate_version!())
+        .author(crate_authors!())
         .about("Combine several wave files into a single polyphonic wave file.")
         .arg(Arg::with_name("OUTPUT")
             .long("output")

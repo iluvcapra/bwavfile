@@ -206,6 +206,7 @@ fn create_blits_file(file_name: &str, sample_rate : u32, bits_per_sample : u16) 
     let format = WaveFmt::new_pcm_multichannel(sample_rate, bits_per_sample as u16, 0b111111);
 
     let file = WaveWriter::create(file_name, format)?;
+
     let mut fw = file.audio_frame_writer()?;
     for frame in frames {
         let buf = vec![frame.0, frame.1, frame.2, frame.3, frame.4, frame.5];
@@ -216,13 +217,15 @@ fn create_blits_file(file_name: &str, sample_rate : u32, bits_per_sample : u16) 
     Ok(())
 }
 
+#[macro_use]
+extern crate clap;
 use clap::{Arg, App};
 
 fn main() -> io::Result<()> {
 
     let matches = App::new("blits")
-    .version("0.1")
-    .author("Jamie Hardt")
+    .version(crate_version!())
+    .author(crate_authors!())
     .about("Generate a BLITS 5.1 alignment tone.")
     .arg(Arg::with_name("sample_rate")
         .long("sample-rate")    

@@ -20,6 +20,10 @@ pub type Decibels = f32;
 /// - [EBU Tech R099](https://tech.ebu.ch/docs/r/r099.pdf) (October 2011) "‘Unique’ Source Identifier (USID) for use in the 
 ///   &lt;OriginatorReference&gt; field of the Broadcast Wave Format"
 
+// Note for me later:
+// get env values: https://doc.rust-lang.org/std/macro.option_env.html
+// Cargo env values: https://doc.rust-lang.org/cargo/reference/environment-variables.html
+
 #[derive(Debug)]
 pub struct Bext {
 
