@@ -9,6 +9,7 @@
 //! TODO: Implement command-line interface
 
 use std::f64;
+use std::io;
 use bwavfile::{WaveWriter, WaveFmt};
 
 fn sine_wave(t: u64, amplitude : i32, wavelength : u32) -> i32 {
@@ -88,7 +89,10 @@ impl ToneBurstSignal for Vec<ToneBurst> {
 }
 
 
-fn main() -> () {
+fn main() -> io::Result<()> {
+
+    let sample_rate = 48000;
+    let bits_per_sample = 24;
 
     // BLITS Tone signal format
     // From EBU Tech 3304 §4 - https://tech.ebu.ch/docs/tech/tech3304.pdf
@@ -190,16 +194,10 @@ fn main() -> () {
         ToneBurst::Silence(200)
     ];
 
-
-    let sample_rate = 48000;
-    let bits_per_sample = 24;
-
     let length = [&left_channel_sequence, &right_channel_sequence, 
         &center_channel_sequence, &lfe_channel_sequence, 
         &ls_channel_sequence, &rs_channel_sequence].iter()
             .map(|i| i.duration(sample_rate)).max().unwrap_or(0);
-
-    println!("Will generate tone of length {} frames", &length);
 
     let frames = (0..=length).map(|frame| {
         (left_channel_sequence.signal(frame, sample_rate, bits_per_sample),
@@ -220,4 +218,5 @@ fn main() -> () {
     }
     fw.end().expect("Failed to close frame writer");
 
+    Ok(())
 }
