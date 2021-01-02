@@ -106,4 +106,8 @@ impl<R: Read + Seek> AudioFrameReader<R> {
             Ok( 0 )
         }
     }
+
+    pub fn read_float_frame(&mut self, buffer:&mut [f32]) -> Result<u64, Error> {
+        todo!()
+    }
 }
