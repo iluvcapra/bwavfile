@@ -33,7 +33,14 @@ impl<T> WriteBWaveChunks for T where T: Write {
         self.write_u32::<LittleEndian>(format.bytes_per_second)?;
         self.write_u16::<LittleEndian>(format.block_alignment)?;
         self.write_u16::<LittleEndian>(format.bits_per_sample)?;
-        // self.write_u8(0)?;
+        if let Some(ext) = format.extended_format {
+            let cbSize = 24u16;
+            self.write_u16::<LittleEndian>(cbSize)?;
+            self.write_u16::<LittleEndian>(ext.valid_bits_per_sample)?;
+            self.write_u32::<LittleEndian>(ext.channel_mask)?;
+            let uuid = ext.type_guid.as_bytes();
+            self.write(uuid)?;
+        }
         Ok(())
     }
 
