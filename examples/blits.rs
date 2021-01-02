@@ -6,11 +6,10 @@
 //! alignment signal.
 //! 
 //! TODO: Pre-calculate the sine waves to speed up generation
-//! TODO: Implement command-line interface
 
 use std::f64;
 use std::io;
-use bwavfile::{WaveWriter, WaveFmt};
+use bwavfile::{WaveWriter, WaveFmt, Error};
 
 fn sine_wave(t: u64, amplitude : i32, wavelength : u32) -> i32 {
     //I did it this way because I'm weird
@@ -27,8 +26,8 @@ fn dbfs_to_f32(dbfs : f32) -> f32 {
     10f32.powf(dbfs / 20f32)
 }
 
-fn dbfs_to_signed_int(dbfs: f32, bit_depth: u32) -> i32 {
-    let full_code = (1i32 << (bit_depth + 1)) - 1;
+fn dbfs_to_signed_int(dbfs: f32, bit_depth: u16) -> i32 {
+    let full_code : i32 = (1i32 << (bit_depth + 1)) - 1;
     ((full_code as f32) * dbfs_to_f32(dbfs)) as i32
 }
 
@@ -54,7 +53,7 @@ trait ToneBurstSignal {
 
     fn duration(&self, sample_rate: u32) -> u64;
 
-    fn signal(&self, t: u64, sample_rate: u32, bit_depth: u32) -> i32;
+    fn signal(&self, t: u64, sample_rate: u32, bit_depth: u16) -> i32;
 }
 
 impl ToneBurstSignal for Vec<ToneBurst> {
@@ -65,7 +64,7 @@ impl ToneBurstSignal for Vec<ToneBurst> {
         })
     }
 
-    fn signal(&self, t: u64, sample_rate: u32, bit_depth: u32) -> i32 { 
+    fn signal(&self, t: u64, sample_rate: u32, bit_depth: u16) -> i32 { 
         self.iter()
             .scan(0u64, |accum, &item| {
                 let dur = item.duration(sample_rate);
@@ -88,11 +87,7 @@ impl ToneBurstSignal for Vec<ToneBurst> {
     }
 }
 
-
-fn main() -> io::Result<()> {
-
-    let sample_rate = 48000;
-    let bits_per_sample = 24;
+fn create_blits_file(file_name: &str, sample_rate : u32, bits_per_sample : u16) -> Result<(),Error> {
 
     // BLITS Tone signal format
     // From EBU Tech 3304 §4 - https://tech.ebu.ch/docs/tech/tech3304.pdf
@@ -210,13 +205,50 @@ fn main() -> io::Result<()> {
 
     let format = WaveFmt::new_pcm_multichannel(sample_rate, bits_per_sample as u16, 0b111111);
 
-    let file = WaveWriter::create("blits.wav", format).expect("Failed to create file");
-    let mut fw = file.audio_frame_writer().expect("Failed to open audio writer");
+    let file = WaveWriter::create(file_name, format)?;
+    let mut fw = file.audio_frame_writer()?;
     for frame in frames {
         let buf = vec![frame.0, frame.1, frame.2, frame.3, frame.4, frame.5];
-        fw.write_integer_frames(&buf).expect("Failed to write audio frame");
+        fw.write_integer_frames(&buf)?;
     }
-    fw.end().expect("Failed to close frame writer");
+    fw.end()?;
 
     Ok(())
+}
+
+use clap::{Arg, App};
+
+fn main() -> io::Result<()> {
+
+    let matches = App::new("blits")
+    .version("0.1")
+    .author("Jamie Hardt")
+    .about("Generate a BLITS 5.1 alignment tone.")
+    .arg(Arg::with_name("sample_rate")
+        .long("sample-rate")    
+        .short("s")
+        .help("Sample rate of output")
+        .default_value("48000")
+    )
+    .arg(Arg::with_name("bit_depth")
+        .long("bit-depth")
+        .short("b")
+        .help("Bit depth of output")
+        .default_value("24")
+    )
+    .arg(Arg::with_name("OUTPUT")
+        .help("Output wave file")
+        .default_value("blits.wav")
+    )
+    .get_matches();
+
+    let sample_rate = matches.value_of("sample_rate").unwrap().parse::<u32>().expect("Failed to read sample rate");
+    let bits_per_sample = matches.value_of("bit_depth").unwrap().parse::<u16>().expect("Failed to read bit depth");
+    let filename = matches.value_of("OUTPUT").unwrap();
+
+    match create_blits_file(&filename, sample_rate, bits_per_sample) {
+        Err( Error::IOError(x) ) => panic!("IO Error: {:?}", x),
+        Err( err ) => panic!("Error: {:?}", err),
+        Ok(()) => Ok(())
+    }
 }
