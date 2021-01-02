@@ -30,7 +30,7 @@ fn assert_match_stream<T>(stream_key: &str,
             .for_each(|value| {
                 let filen : &str = value["format"]["filename"].as_str().unwrap();
                 let json_value : &Value = &value["streams"][0][stream_key];
-                let mut wavfile = WaveReader::open(filen).unwrap();
+                let mut wavfile = WaveReader::open_unbuffered(filen).unwrap();
                 let wavfile_value: T = other(&mut wavfile);
                 println!("asserting {} for {}",stream_key, filen);
                 assert_eq!(Into::<Value>::into(wavfile_value), *json_value);

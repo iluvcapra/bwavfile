@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{Write,Seek,SeekFrom,Cursor};
+use std::io::{Write,Seek,SeekFrom,Cursor,BufWriter};
 
 use super::Error;
 use super::fourcc::{FourCC, WriteFourCC, RIFF_SIG, RF64_SIG, DS64_SIG,
@@ -209,10 +209,19 @@ pub struct WaveWriter<W> where W: Write + Seek {
 
 const DS64_RESERVATION_LENGTH : u32 = 96;
 
-impl WaveWriter<File> {
+impl WaveWriter<BufWriter<File>> {
 
     /// Create a new Wave file at `path`.
     pub fn create(path : &str, format : WaveFmt) -> Result<Self, Error> {
+        let f = File::create(path)?;
+        let b = BufWriter::new(f);
+        Ok( Self::new(b, format)? )
+    }
+}
+
+impl WaveWriter<File> {
+    /// Creare a new Wave file with unbuffered IO at `path`
+    pub fn create_unbuffered(path : &str, format : WaveFmt) -> Result<Self, Error> {
         let f = File::create(path)?;
         Ok( Self::new(f, format)? )
     }

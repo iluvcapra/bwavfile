@@ -165,7 +165,7 @@ fn test_frame_reader_consumes_reader() {
     use bwavfile::WaveFmt;
     use bwavfile::AudioFrameReader;
     use std::fs::File;
-    fn from_wav_filename(wav_filename: &str) -> Result<(WaveFmt, AudioFrameReader<File>), ()> {
+    fn from_wav_filename(wav_filename: &str) -> Result<(WaveFmt, AudioFrameReader<std::io::BufReader<File>>), ()> {
         if let Ok(mut r) = WaveReader::open(&wav_filename) {
             let format = r.format().unwrap();
             let frame_reader = r.audio_frame_reader().unwrap();
