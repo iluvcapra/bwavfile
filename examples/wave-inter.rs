@@ -28,5 +28,5 @@ fn main() -> io::Result<()> {
 
     println!("Command line opts: {:?}", matches);
 
-    Ok(())
+    todo!("Finish implementation");
 }
