@@ -78,8 +78,4 @@ in zipped form. Before you can run tests, you need to `cd` into the `tests`
 directory and run the `create_test_media.sh` script. Note that one of the 
 test files (the RF64 test case) is over four gigs in size.
 
-Likewise, [the RF64 _writing_ test case][rf64test] writes an RF64 wave file 
-to memory and is very time-intensive, so is commented-out in the code but 
-can be un-commented if you want to run it on your system. 
-
 [rf64test]: https://github.com/iluvcapra/bwavfile/blob/1f8542a7efb481da076120bf8107032c5b48889d/src/wavewriter.rs#L399
