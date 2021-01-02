@@ -9,7 +9,14 @@
 
 use std::f64;
 use std::io;
+
+extern crate bwavfile;
 use bwavfile::{WaveWriter, WaveFmt, Error};
+
+#[macro_use]
+extern crate clap;
+use clap::{Arg, App};
+
 
 fn sine_wave(t: u64, amplitude : i32, wavelength : u32) -> i32 {
     //I did it this way because I'm weird
@@ -192,7 +199,8 @@ fn create_blits_file(file_name: &str, sample_rate : u32, bits_per_sample : u16) 
     let length = [&left_channel_sequence, &right_channel_sequence, 
         &center_channel_sequence, &lfe_channel_sequence, 
         &ls_channel_sequence, &rs_channel_sequence].iter()
-            .map(|i| i.duration(sample_rate)).max().unwrap_or(0);
+            .map(|i| i.duration(sample_rate))
+            .max().unwrap_or(0);
 
     let frames = (0..=length).map(|frame| {
         (left_channel_sequence.signal(frame, sample_rate, bits_per_sample),
@@ -203,7 +211,7 @@ fn create_blits_file(file_name: &str, sample_rate : u32, bits_per_sample : u16) 
         rs_channel_sequence.signal(frame, sample_rate, bits_per_sample))
     });
 
-    let format = WaveFmt::new_pcm_multichannel(sample_rate, bits_per_sample as u16, 0b111111);
+    let format = WaveFmt::new_pcm_multichannel(sample_rate, bits_per_sample, 0b111111);
 
     let file = WaveWriter::create(file_name, format)?;
 
@@ -216,10 +224,6 @@ fn create_blits_file(file_name: &str, sample_rate : u32, bits_per_sample : u16) 
 
     Ok(())
 }
-
-#[macro_use]
-extern crate clap;
-use clap::{Arg, App};
 
 fn main() -> io::Result<()> {
 

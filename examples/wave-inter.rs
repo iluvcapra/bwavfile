@@ -6,6 +6,8 @@
 
 use std::io;
 
+extern crate bwavfile;
+
 #[macro_use]
 extern crate clap;
 use clap::{Arg, App};
