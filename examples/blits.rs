@@ -250,8 +250,12 @@ fn main() -> io::Result<()> {
     )
     .get_matches();
 
-    let sample_rate = matches.value_of("sample_rate").unwrap().parse::<u32>().expect("Failed to read sample rate");
-    let bits_per_sample = matches.value_of("bit_depth").unwrap().parse::<u16>().expect("Failed to read bit depth");
+    let sample_rate = matches.value_of("sample_rate").unwrap().parse::<u32>()
+        .expect("Failed to read sample rate");
+
+    let bits_per_sample = matches.value_of("bit_depth").unwrap().parse::<u16>()
+        .expect("Failed to read bit depth");
+        
     let filename = matches.value_of("OUTPUT").unwrap();
 
     match create_blits_file(&filename, sample_rate, bits_per_sample) {
