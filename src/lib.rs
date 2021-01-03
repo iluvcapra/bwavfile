@@ -50,8 +50,6 @@ mod errors;
 mod common_format;
 
 mod parser;
-
-mod audio_frame_reader;
 mod list_form;
 
 mod chunks;
@@ -63,10 +61,9 @@ mod wavereader;
 mod wavewriter;
 
 pub use errors::Error;
-pub use wavereader::WaveReader;
+pub use wavereader::{WaveReader, AudioFrameReader};
 pub use wavewriter::{WaveWriter, AudioFrameWriter};
 pub use bext::Bext;
 pub use fmt::{WaveFmt, WaveFmtExtended, ChannelDescriptor, ChannelMask, ADMAudioID};
 pub use common_format::CommonFormat;
-pub use audio_frame_reader::AudioFrameReader;
 pub use cue::Cue;

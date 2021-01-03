@@ -162,8 +162,7 @@ fn test_channels_stereo_no_fmt_extended() {
 #[test]
 fn test_frame_reader_consumes_reader() {
     // Issue #6
-    use bwavfile::WaveFmt;
-    use bwavfile::AudioFrameReader;
+    use bwavfile::{WaveFmt, AudioFrameReader};
     use std::fs::File;
     fn from_wav_filename(wav_filename: &str) -> Result<(WaveFmt, AudioFrameReader<std::io::BufReader<File>>), ()> {
         if let Ok(mut r) = WaveReader::open(&wav_filename) {
