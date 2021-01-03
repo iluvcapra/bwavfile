@@ -6,6 +6,7 @@
 //! alignment signal.
 //! 
 //! TODO: Pre-calculate the sine waves to speed up generation
+//! TODO: Make tone onsets less snappy
 
 use std::f64;
 use std::io;
@@ -34,7 +35,7 @@ fn dbfs_to_f32(dbfs : f32) -> f32 {
 }
 
 fn dbfs_to_signed_int(dbfs: f32, bit_depth: u16) -> i32 {
-    let full_code : i32 = (1i32 << (bit_depth + 1)) - 1;
+    let full_code : i32 = (1i32 << bit_depth - 1) - 1;
     ((full_code as f32) * dbfs_to_f32(dbfs)) as i32
 }
 
