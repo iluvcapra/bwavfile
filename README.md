@@ -13,11 +13,15 @@ reading and creating new audio files respectively.
 
 `WaveReader` and `WaveWriter` support:
   * A unified interface for standard RIFF and RF64/BW64 64-bit Wave files.
+  * When using `WaveWriter`, wave files are transparently upgraded from RIFF
+    to RF64 when required.
+  * Unpacked reading and writing of Integer PCM and IEEE float audio data 
+    formats.
   * A unified interface for standard `WaveFormat` and extended `WaveFormatEx`
     wave data format specification.
   * Multichannel, surround, and ambisonic audio data description including 
-    surround channel maps, ADM AudioTrackFormat, AudioChannelFormatRef and 
-    AudioPackRef data structures.
+    surround channel maps, ADM `AudioTrackFormat`, `AudioChannelFormatRef` and 
+    `AudioPackRef` data structures.
   * Broadcast-Wave metdata extension, including long description, originator 
     information, SMPTE UMID and coding history.
   * Reading and writing of embedded iXML and axml/ADM metadata.
