@@ -20,6 +20,15 @@ struct RawCue {
 }
 
 impl RawCue {
+
+    fn write_to(cues : Vec<Self>) -> Vec<u8> {
+        let mut writer = Cursor::new(vec![0u8; 0]);
+        
+        
+        todo!()
+
+    }
+
     fn read_from(data : &[u8]) -> Result<Vec<Self>,Error> {
         let mut rdr = Cursor::new(data);
         let count = rdr.read_u32::<LittleEndian>()?;
@@ -198,7 +207,7 @@ impl AdtlMemberSearch for Vec<RawAdtlMember> {
 pub struct Cue {
 
     /// Unique numeric identifier for this cue
-    pub ident : u32,
+    //pub ident : u32,
 
     /// The time of this marker
     pub frame : u32,
@@ -236,7 +245,7 @@ impl Cue {
             raw_cues.iter()
             .map(|i| {
                 Cue {
-                    ident : i.cue_point_id,
+                    //ident : i.cue_point_id,
                     frame : i.frame,
                     length: {
                         raw_adtl.ltxt_for_cue_point(i.cue_point_id).first()
