@@ -35,12 +35,6 @@ Apps we test against:
 [github]: https://github.com/iluvcapra/bwavfile
 */
 
-// #![feature(external_doc)]
-
-// #[doc(include="../README.md")]
-// #[cfg(doctest)]
-// pub struct ReadmeDoctests;
-
 extern crate encoding;
 extern crate byteorder;
 extern crate uuid;
