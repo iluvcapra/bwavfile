@@ -274,6 +274,7 @@ impl<W> WaveWriter<W> where W: Write + Seek {
     /// the file; if you have already written and closed the audio data the 
     /// bext chunk will be positioned after it.
     pub fn write_broadcast_metadata(&mut self, bext: &Bext) -> Result<(),Error> {
+        //FIXME Implement re-writing
         let mut c = Cursor::new(vec![0u8; 0]);
         c.write_bext(&bext)?;
         let buf = c.into_inner();
@@ -283,11 +284,13 @@ impl<W> WaveWriter<W> where W: Write + Seek {
 
     /// Write iXML metadata
     pub fn write_ixml(&mut self, ixml: &[u8]) -> Result<(),Error> {
+        //FIXME Implement re-writing
         self.write_chunk(IXML_SIG, &ixml)
     }
 
     /// Write axml/ADM metadata
     pub fn write_axml(&mut self, axml: &[u8]) -> Result<(), Error> {
+        //FIXME Implement re-writing
         self.write_chunk(AXML_SIG, &axml)
     }
 
