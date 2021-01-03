@@ -6,6 +6,7 @@
 //! alignment signal.
 //! 
 //! TODO: Pre-calculate the sine waves to speed up generation
+//! TODO: Make tone onsets less snappy
 
 use std::f64;
 use std::io;
