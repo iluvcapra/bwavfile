@@ -1,27 +1,25 @@
 
-use std::io::SeekFrom;
 use std::fs::File;
 
+use std::io::SeekFrom;
+use std::io::Cursor;
+use std::io::{Read, Seek, BufReader};
+use std::io::SeekFrom::{Start,Current,};
+
 use super::parser::Parser;
-use super::fourcc::{FourCC, ReadFourCC, FMT__SIG,DATA_SIG, BEXT_SIG, LIST_SIG, JUNK_SIG, FLLR_SIG, CUE__SIG, 
-    ADTL_SIG, AXML_SIG, IXML_SIG};
+use super::fourcc::{FourCC, ReadFourCC, FMT__SIG, DATA_SIG, BEXT_SIG, LIST_SIG,
+    JUNK_SIG, FLLR_SIG, CUE__SIG, ADTL_SIG, AXML_SIG, IXML_SIG};
 use super::errors::Error as ParserError;
 use super::fmt::{WaveFmt, ChannelDescriptor, ChannelMask};
 use super::bext::Bext;
-
 use super::chunks::ReadBWaveChunks;
 use super::cue::Cue;
-
-use std::io::Cursor;
-use std::io::{Read, Seek, BufReader};
-
-use std::io::SeekFrom::{Start,Current,};
+use super::errors::Error;
+use super::CommonFormat;
 
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 
-use super::errors::Error;
-use super::CommonFormat;
 
 
 /// Read audio frames
