@@ -36,8 +36,6 @@ Some features that may be included in the future include:
 
 ## Use Examples
 
-Check out the [examples](examples) directory for some practical use cases:
-
   * [blits](examples/blits.rs) shows how to use `WaveWriter` to create a new
     file with BLITS alignment tones.
   * [wave-inter](examples/wave-inter.rs) uses `WaveReader` and `WaveWriter` to
