@@ -8,7 +8,7 @@ use std::io;
 use std::path::Path;
 
 extern crate bwavfile;
-use bwavfile::{Error,WaveReader, ChannelDescriptor, ChannelMask};
+use bwavfile::{Error,WaveReader, WaveWriter, ChannelDescriptor, ChannelMask, WaveFmt, AudioFrameWriter};
 
 #[macro_use]
 extern crate clap;
@@ -44,9 +44,10 @@ fn name_suffix(force_numeric : bool, delim : &str, index: usize, channel_descrip
 }
 
 fn process_file(infile: &str, delim : &str, numeric_channel_names : bool) -> Result<(), Error> {
-    let mut read_wave = WaveReader::open(infile)?;
-    let channel_desc = read_wave.channels()?;
-    
+    let mut input_file = WaveReader::open(infile)?;
+    let channel_desc = input_file.channels()?;
+    let input_format = input_file.format()?;
+
     if channel_desc.len() == 1 {
         println!("Input file in monoaural, exiting.");
         return Ok(());
@@ -56,10 +57,27 @@ fn process_file(infile: &str, delim : &str, numeric_channel_names : bool) -> Res
     let basename = infile_path.file_stem().expect("Unable to extract file basename").to_str().unwrap();
     let output_dir = infile_path.parent().expect("Unable to derive parent directory");
 
+    let ouptut_format = WaveFmt::new_pcm_mono(input_format.sample_rate, input_format.bits_per_sample);
+    let mut input_wave_reader = input_file.audio_frame_reader()?;
+
     for (n, channel) in channel_desc.iter().enumerate() {
         let suffix = name_suffix(numeric_channel_names, delim, n + 1, channel);
-        let outfile_name = output_dir.join(format!("{}{}.wav", basename, suffix)).into_os_string().into_string().unwrap();
+        let outfile_name = output_dir.join(format!("{}{}.wav", basename, suffix))
+            .into_os_string().into_string().unwrap();
+
         println!("Will create file {}", outfile_name);
+
+        let output_file = WaveWriter::create(&outfile_name, ouptut_format).expect("Failed to create new file");
+        
+        let mut output_wave_writer = output_file.audio_frame_writer()?;
+        let mut buffer = input_format.create_frame_buffer();
+
+        while input_wave_reader.read_integer_frame(&mut buffer)? > 0 {
+            output_wave_writer.write_integer_frames(&buffer[n..=n])?;
+        }
+
+        output_wave_writer.end()?;
+        input_wave_reader.locate(0)?;
     }
 
     Ok(())
