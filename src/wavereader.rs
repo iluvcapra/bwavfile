@@ -133,7 +133,7 @@ impl<R: Read + Seek> AudioFrameReader<R> {
 /// assert_eq!(format.channel_count, 1);
 ///
 /// let mut frame_reader = r.audio_frame_reader().unwrap();
-/// let mut buffer = format.create_frame_buffer();
+/// let mut buffer = format.create_frame_buffer(1);
 ///
 /// let read = frame_reader.read_integer_frame(&mut buffer).unwrap();
 /// 

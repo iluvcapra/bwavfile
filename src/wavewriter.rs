@@ -26,7 +26,7 @@ impl<W> AudioFrameWriter<W> where W: Write + Seek {
         AudioFrameWriter { inner }
     }
 
-    fn write_integer_frames_to_buffer(&self, from_frames :&[i32], to_buffer : &mut Vec<u8>) -> () {
+    fn write_integer_frames_to_buffer(&self, from_frames :&[i32], to_buffer : &mut [u8]) -> () {
         assert!(from_frames.len() % self.inner.inner.format.channel_count as usize == 0, 
             "frames buffer does not contain a number of samples % channel_count == 0");
         self.inner.inner.format.pack_frames(&from_frames, to_buffer);
@@ -40,7 +40,8 @@ impl<W> AudioFrameWriter<W> where W: Write + Seek {
     /// This function will panic if `buffer.len()` modulo the Wave file's channel count
     /// is not zero.
     pub fn write_integer_frames(&mut self, buffer: &[i32]) -> Result<u64,Error> {
-        let mut write_buffer = vec![0u8; 0];
+        let mut write_buffer = self.inner.inner.format
+            .create_raw_buffer(buffer.len() / self.inner.inner.format.channel_count as usize);
 
         self.write_integer_frames_to_buffer(&buffer, &mut write_buffer);
 

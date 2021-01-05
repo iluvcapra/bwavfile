@@ -8,7 +8,7 @@ use std::io;
 use std::path::Path;
 
 extern crate bwavfile;
-use bwavfile::{Error,WaveReader, WaveWriter, ChannelDescriptor, ChannelMask, WaveFmt, AudioFrameWriter};
+use bwavfile::{Error,WaveReader, WaveWriter, ChannelDescriptor, ChannelMask, WaveFmt};
 
 #[macro_use]
 extern crate clap;
@@ -70,7 +70,7 @@ fn process_file(infile: &str, delim : &str, numeric_channel_names : bool) -> Res
         let output_file = WaveWriter::create(&outfile_name, ouptut_format).expect("Failed to create new file");
         
         let mut output_wave_writer = output_file.audio_frame_writer()?;
-        let mut buffer = input_format.create_frame_buffer();
+        let mut buffer = input_format.create_frame_buffer(1);
 
         while input_wave_reader.read_integer_frame(&mut buffer)? > 0 {
             output_wave_writer.write_integer_frames(&buffer[n..=n])?;

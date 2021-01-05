@@ -3,7 +3,7 @@ use super::common_format::{CommonFormat, UUID_PCM,UUID_BFORMAT_PCM};
 use std::io::Cursor;
 
 use byteorder::LittleEndian;
-use byteorder::WriteBytesExt;
+use byteorder::{WriteBytesExt, ReadBytesExt};
 
 // Need more test cases for ADMAudioID
 #[allow(dead_code)]
@@ -290,22 +290,23 @@ impl WaveFmt {
         CommonFormat::make( self.tag, self.extended_format.map(|ext| ext.type_guid))
     }
 
-    /// Create a frame buffer sized to hold frames for a reader or writer
+    /// Create a frame buffer sized to hold `length` frames for a reader or 
+    /// writer
     /// 
     /// This is a conveneince method that creates a `Vec<i32>` with
     /// as many elements as there are channels in the underlying stream. 
-    pub fn create_frame_buffer(&self) -> Vec<i32> {
-        vec![0i32; self.channel_count as usize]
+    pub fn create_frame_buffer(&self, length : usize) -> Vec<i32> {
+        vec![0i32; self.channel_count as usize * length]
     }
 
-    /// Calculate the size of a byte buffer needed to hold audio data of this 
-    /// format for a given number of frames
-    pub fn buffer_length(&self, frame_count: u64) -> usize {
-        (self.block_alignment as u64 * frame_count) as usize
+    /// Create a raw byte buffer to hold `length` blocks from a reader or 
+    /// writer
+    pub fn create_raw_buffer(&self, length : usize) -> Vec<u8> {
+        vec![0u8; self.block_alignment as usize * length]
     }
 
-    // Write frames into a byte vector
-    pub fn pack_frames(&self, from_frames: &[i32], into_bytes: &mut Vec<u8>) -> () {
+    /// Write frames into a byte vector
+    pub fn pack_frames(&self, from_frames: &[i32], into_bytes: &mut [u8]) -> () {
         let mut write_cursor = Cursor::new(into_bytes);
 
         assert!(from_frames.len() % self.channel_count as usize == 0, 
@@ -325,18 +326,19 @@ impl WaveFmt {
     }
 
     /// Read bytes into frames
-    // pub fn unpack_frames(&self, from_bytes: &[u8], into_frames: &mut Vec<i32>) -> () {
-    //     for n in 0..(from_bytes.len()) {
-    //         buffer[n] = match (self.format.bits_per_sample, framed_bits_per_sample) {
-    //             (0..=8,8) => self.inner.read_u8()? as i32 - 0x80_i32, // EBU 3285 §A2.2
-    //             (9..=16,16) => self.inner.read_i16::<LittleEndian>()? as i32,
-    //             (10..=24,24) => self.inner.read_i24::<LittleEndian>()?,
-    //             (25..=32,32) => self.inner.read_i32::<LittleEndian>()?,
-    //             (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
-    //                 b, self.format.channel_count, self.format.block_alignment)
-    //         }
-    //     }
-    // }
+    pub fn unpack_frames(&self, from_bytes: &[u8], into_frames: &mut [i32]) -> () {
+        let mut rdr = Cursor::new(from_bytes);
+        for n in 0..(into_frames.len()) {
+            into_frames[n] = match (self.valid_bits_per_sample(), self.bits_per_sample) {
+                (0..=8,8) => rdr.read_u8().unwrap() as i32 - 0x80_i32, // EBU 3285 §A2.2
+                (9..=16,16) => rdr.read_i16::<LittleEndian>().unwrap() as i32,
+                (10..=24,24) => rdr.read_i24::<LittleEndian>().unwrap(),
+                (25..=32,32) => rdr.read_i32::<LittleEndian>().unwrap(),
+                (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
+                    b, self.channel_count, self.block_alignment)
+            }
+        }
+    }
 
 
     /// Channel descriptors for each channel.
@@ -379,3 +381,47 @@ impl WaveFmt {
     }
 }
 
+trait ReadWavAudioData {
+    fn read_i32_frames(&mut self, format: WaveFmt, into: &mut [i32]) -> Result<usize,std::io::Error>;
+    fn read_f32_frames(&mut self, format: WaveFmt, into: &mut [f32]) -> Result<usize,std::io::Error>;
+}
+
+impl<T> ReadWavAudioData for T where T: std::io::Read {
+
+    fn read_i32_frames(&mut self, format: WaveFmt, into: &mut [i32]) -> Result<usize, std::io::Error> { 
+        assert!(into.len() % format.channel_count as usize == 0);
+
+        for n in 0..(into.len()) {
+            into[n] = match (format.valid_bits_per_sample(), format.bits_per_sample) {
+                (0..=8,8) => self.read_u8().unwrap() as i32 - 0x80_i32, // EBU 3285 §A2.2
+                (9..=16,16) => self.read_i16::<LittleEndian>().unwrap() as i32,
+                (10..=24,24) => self.read_i24::<LittleEndian>().unwrap(),
+                (25..=32,32) => self.read_i32::<LittleEndian>().unwrap(),
+                (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
+                    b, format.channel_count, format.block_alignment)
+            }
+        }
+
+        todo!()
+    }
+    fn read_f32_frames(&mut self, format: WaveFmt, into: &mut [f32]) -> Result<usize, std::io::Error> { 
+        assert!(into.len() % format.channel_count as usize == 0);
+        todo!()
+    }
+
+}
+
+trait WriteWavAudioData {
+    fn write_i32_frames(&mut self, format: WaveFmt, from: &[i32]) -> Result<usize, std::io::Error>;
+    fn write_f32_frames(&mut self, format: WaveFmt, from: &[f32]) -> Result<usize, std::io::Error>;
+}
+
+impl<T> WriteWavAudioData for T where T: std::io::Write {
+
+    fn write_i32_frames(&mut self, format: WaveFmt, _: &[i32]) -> Result<usize, std::io::Error> { 
+        todo!() 
+    }
+    fn write_f32_frames(&mut self, format: WaveFmt, _: &[f32]) -> Result<usize, std::io::Error> { 
+        todo!() 
+    }
+}

@@ -82,7 +82,7 @@ fn test_read() {
     let path = "tests/media/audacity_16bit.wav";
 
     let mut w = WaveReader::open(path).expect("Failure opening test file");
-    let mut buffer = w.format().unwrap().create_frame_buffer();
+    let mut buffer = w.format().unwrap().create_frame_buffer(1);
 
     let mut reader = w.audio_frame_reader().unwrap();
 
@@ -101,7 +101,7 @@ fn test_locate_multichannel_read() {
     let path = "tests/media/ff_pink.wav";
 
     let mut w = WaveReader::open(path).expect("Failure opening test file");
-    let mut buffer = w.format().unwrap().create_frame_buffer();
+    let mut buffer = w.format().unwrap().create_frame_buffer(1);
 
     let mut reader = w.audio_frame_reader().unwrap();
 
