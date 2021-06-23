@@ -8,7 +8,7 @@ use std::io;
 use std::path::Path;
 
 extern crate bwavfile;
-use bwavfile::{Error,WaveReader, WaveWriter, ChannelDescriptor, ChannelMask, WaveFmt, AudioFrameWriter};
+use bwavfile::{Error,WaveReader, WaveWriter, ChannelDescriptor, ChannelMask, WaveFmt};
 
 #[macro_use]
 extern crate clap;
