@@ -120,6 +120,10 @@ impl<R: Read + Seek> AudioFrameReader<R> {
             Ok( 0 )
         }
     }
+
+    pub fn read_float_frame(&mut self, buffer:&mut [f32]) -> Result<u64, Error> {
+        todo!()
+    }
 }
 
 /// Wave, Broadcast-WAV and RF64/BW64 parser/reader.
