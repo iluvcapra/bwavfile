@@ -364,7 +364,7 @@ impl Cue {
             .map(|i| {
                 Cue {
                     //ident : i.cue_point_id,
-                    frame : i.frame,
+                    frame : i.frame_offset,
                     length: {
                         raw_adtl.ltxt_for_cue_point(i.cue_point_id).first()
                         .filter(|x| x.purpose == FourCC::make(b"rgn "))
