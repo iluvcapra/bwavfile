@@ -18,6 +18,7 @@ use byteorder::{WriteBytesExt, ReadBytesExt};
 /// `AudioProgramme`.
 /// 
 /// See BS.2088-1 § 8, also BS.2094, also blahblahblah...
+#[derive(Debug)]
 pub struct ADMAudioID {
     pub track_uid: [char; 12],
     pub channel_format_ref: [char; 14],
@@ -28,6 +29,7 @@ pub struct ADMAudioID {
 /// 
 /// This information is correlated from the Wave format ChannelMap field and
 /// the `chna` chunk, if present.
+#[derive(Debug)]
 pub struct ChannelDescriptor {
     /// Index, the offset of this channel's samples in one frame.
     pub index: u16,

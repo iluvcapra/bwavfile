@@ -50,7 +50,7 @@ impl<R: Read + Seek> AudioFrameReader<R> {
             "Unable to read audio frames from packed formats: block alignment is {}, should be {}",
             format.block_alignment, (format.bits_per_sample / 8 ) * format.channel_count);
         
-        assert!(format.common_format() == CommonFormat::IntegerPCM , 
+        assert!(format.common_format() == CommonFormat::IntegerPCM || format.common_format() == CommonFormat::IeeeFloatPCM, 
                 "Unsupported format tag {:?}", format.tag);
         
         inner.seek(Start(start))?;
@@ -121,8 +121,27 @@ impl<R: Read + Seek> AudioFrameReader<R> {
         }
     }
 
-    pub fn read_float_frame(&mut self, buffer:&mut [f32]) -> Result<u64, Error> {
-        todo!()
+    pub fn read_float_frame(&mut self, buffer: &mut [f32]) -> Result<u64, Error> {
+        assert!(buffer.len() as u16 == self.format.channel_count,
+            "read_float_frame was called with a mis-sized buffer, expected {}, was {}",
+            self.format.channel_count, buffer.len());
+
+        let framed_bits_per_sample = self.format.block_alignment * 8 / self.format.channel_count;
+
+        let tell = self.inner.seek(Current(0))?;
+
+        if (tell - self.start) < self.length {
+            for n in 0..(self.format.channel_count as usize) {
+                buffer[n] = match (self.format.bits_per_sample, framed_bits_per_sample) {
+                    (25..=32,32) => self.inner.read_f32::<LittleEndian>()?,
+                    (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}",
+                        b, self.format.channel_count, self.format.block_alignment)
+                }
+            }
+            Ok( 1 )
+        } else {
+            Ok( 0 )
+        }
     }
 }
 
