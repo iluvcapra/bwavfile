@@ -31,6 +31,7 @@ Apps we test against:
 - iZotope RX Audio Editor
 - FFMpeg
 - Audacity
+- Sound Devices field recorders: 702T, MixPre-10 II
 
 [github]: https://github.com/iluvcapra/bwavfile
 */
