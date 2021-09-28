@@ -25,13 +25,14 @@ reading and creating new audio files respectively.
   * Broadcast-Wave metdata extension, including long description, originator 
     information, SMPTE UMID and coding history.
   * Reading and writing of embedded iXML and axml/ADM metadata.
-  * Reading and writing of timed cues and and timed cue region.
+  * Reading and writing of timed cues and and timed cue regions.
 
 ### Feature Roadmap
 
 Some features that may be included in the future include:
   * Broadcast-Wave `levl` waveform overview data reading and writing.
-  * Sampler and Instrument mentadata.
+  * Sampler and Instrument metadata.
+  * Performance improvements.
 
 
 ## Use Examples
