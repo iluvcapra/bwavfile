@@ -281,7 +281,16 @@ pub struct Cue {
     pub label : Option<String>,
 
     /// The text "note"/comment of this marker if provided
-    pub note : Option<String>
+    pub note : Option<String>,
+    
+    /// The offser of this marker
+    /// 
+    /// **Note:** Applications use the `frame` and `offset` fields
+    /// in different ways. iZotope RX Audio Editor writes the
+    /// marker position to *both* fields, while a Sound Devices
+    /// recorder writes the marker position to *only* the `offset`
+    /// field.
+    pub offset : u32
 }
 
 
@@ -306,7 +315,7 @@ impl Cue {
                     chunk_id: DATA_SIG,
                     chunk_start: 0,
                     block_start: 0,
-                    frame_offset: cue.frame
+                    frame_offset: cue.offset
                 };
 
                 let raw_label = cue.label.as_ref().map(|val| {
@@ -364,7 +373,7 @@ impl Cue {
             .map(|i| {
                 Cue {
                     //ident : i.cue_point_id,
-                    frame : i.frame_offset,
+                    frame : i.frame,
                     length: {
                         raw_adtl.ltxt_for_cue_point(i.cue_point_id).first()
                         .filter(|x| x.purpose == FourCC::make(b"rgn "))
@@ -380,7 +389,8 @@ impl Cue {
                             //.filter_map(|x| str::from_utf8(&x.text).ok())
                             .map(|s| convert_to_cue_string(&s.text))
                             .next()
-                    }
+                    },
+                    offset: i.frame_offset
                 }
             }).collect() 
         )
