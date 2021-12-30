@@ -1,6 +1,8 @@
 
 use std::fs::File;
 
+use std::path::Path;
+
 use std::io::SeekFrom;
 use std::io::Cursor;
 use std::io::{Read, Seek, BufReader};
@@ -198,7 +200,7 @@ pub struct WaveReader<R: Read + Seek> {
 
 impl WaveReader<BufReader<File>> {
 
-    pub fn open(path: &str) -> Result<Self, ParserError> {
+    pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, ParserError> {
         let f = File::open(path)?;
         let inner = BufReader::new(f);
         Ok( Self::new(inner)? )
@@ -211,7 +213,7 @@ impl WaveReader<File> {
      ///
      /// A convenience that opens `path` and calls `Self::new()`
      
-    pub fn open_unbuffered(path: &str) -> Result<Self, ParserError> {
+    pub fn open_unbuffered<P: AsRef<Path>>(path: P) -> Result<Self, ParserError> {
         let inner = File::open(path)?;
         return Ok( Self::new(inner)? )
     }

@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::path::Path;
 use std::io::{Write,Seek,SeekFrom,Cursor,BufWriter};
 
 use super::Error;
@@ -213,7 +214,7 @@ const DS64_RESERVATION_LENGTH : u32 = 96;
 impl WaveWriter<BufWriter<File>> {
 
     /// Create a new Wave file at `path`.
-    pub fn create(path : &str, format : WaveFmt) -> Result<Self, Error> {
+    pub fn create<P: AsRef<Path>>(path : P, format : WaveFmt) -> Result<Self, Error> {
         let f = File::create(path)?;
         let b = BufWriter::new(f);
         Ok( Self::new(b, format)? )
@@ -222,7 +223,7 @@ impl WaveWriter<BufWriter<File>> {
 
 impl WaveWriter<File> {
     /// Creare a new Wave file with unbuffered IO at `path`
-    pub fn create_unbuffered(path : &str, format : WaveFmt) -> Result<Self, Error> {
+    pub fn create_unbuffered<P: AsRef<Path>>(path : P, format : WaveFmt) -> Result<Self, Error> {
         let f = File::create(path)?;
         Ok( Self::new(f, format)? )
     }
