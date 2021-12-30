@@ -1,17 +1,15 @@
 extern crate bwavfile;
 
-use bwavfile::WaveReader;
+use bwavfile::ChannelMask;
 use bwavfile::Error;
-use bwavfile::{ ChannelMask}; 
+use bwavfile::WaveReader;
 
 #[test]
 fn test_open() {
     let path = "tests/media/ff_silence.wav";
 
     match WaveReader::open(path) {
-        Ok(_) => {
-            ()
-        }, 
+        Ok(_) => (),
         Err(x) => {
             assert!(false, "Opened error.wav with unexpected error {:?}", x)
         }
@@ -19,7 +17,7 @@ fn test_open() {
 }
 
 #[test]
-fn test_format_silence() -> Result<(),Error> {
+fn test_format_silence() -> Result<(), Error> {
     let path = "tests/media/ff_silence.wav";
 
     let mut w = WaveReader::open(path)?;
@@ -29,7 +27,7 @@ fn test_format_silence() -> Result<(),Error> {
     assert_eq!(format.sample_rate, 44100);
     assert_eq!(format.channel_count, 1);
     assert_eq!(format.tag as u16, 1);
-    Ok( () )
+    Ok(())
 }
 
 #[test]
@@ -44,18 +42,18 @@ fn test_format_error() {
 }
 
 #[test]
-fn test_frame_count() -> Result<(),Error> {
+fn test_frame_count() -> Result<(), Error> {
     let path = "tests/media/ff_silence.wav";
 
     let mut w = WaveReader::open(path)?;
     let l = w.frame_length()?;
     assert_eq!(l, 44100);
 
-    Ok( () )
+    Ok(())
 }
 
 #[test]
-fn test_minimal_wave()  {
+fn test_minimal_wave() {
     let path = "tests/media/ff_silence.wav";
 
     let mut w = WaveReader::open(path).expect("Failure opening file");
@@ -86,14 +84,12 @@ fn test_read() {
 
     let mut reader = w.audio_frame_reader().unwrap();
 
-    
-
     assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
     assert_eq!(buffer[0], -2823_i32);
     assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
     assert_eq!(buffer[0], 2012_i32);
     assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
-    assert_eq!(buffer[0], 4524_i32); 
+    assert_eq!(buffer[0], 4524_i32);
 }
 
 #[test]
@@ -126,10 +122,10 @@ fn test_channels_stereo() {
     let channels = w.channels().unwrap();
 
     assert_eq!(channels.len(), 2);
-    assert_eq!(channels[0].index,0);
-    assert_eq!(channels[1].index,1);
-    assert_eq!(channels[0].speaker,ChannelMask::FrontLeft);
-    assert_eq!(channels[1].speaker,ChannelMask::FrontRight);
+    assert_eq!(channels[0].index, 0);
+    assert_eq!(channels[1].index, 1);
+    assert_eq!(channels[0].speaker, ChannelMask::FrontLeft);
+    assert_eq!(channels[1].speaker, ChannelMask::FrontRight);
 }
 
 #[test]
@@ -140,8 +136,8 @@ fn test_channels_mono_no_extended() {
     let channels = w.channels().unwrap();
 
     assert_eq!(channels.len(), 1);
-    assert_eq!(channels[0].index,0);
-    assert_eq!(channels[0].speaker,ChannelMask::FrontCenter);
+    assert_eq!(channels[0].index, 0);
+    assert_eq!(channels[0].speaker, ChannelMask::FrontCenter);
 }
 
 #[test]
@@ -152,19 +148,21 @@ fn test_channels_stereo_no_fmt_extended() {
     let channels = w.channels().unwrap();
 
     assert_eq!(channels.len(), 2);
-    assert_eq!(channels[0].index,0);
-    assert_eq!(channels[1].index,1);
-    assert_eq!(channels[0].speaker,ChannelMask::FrontLeft);
-    assert_eq!(channels[1].speaker,ChannelMask::FrontRight);
+    assert_eq!(channels[0].index, 0);
+    assert_eq!(channels[1].index, 1);
+    assert_eq!(channels[0].speaker, ChannelMask::FrontLeft);
+    assert_eq!(channels[1].speaker, ChannelMask::FrontRight);
 }
 
 ///See issue 6 and 7
 #[test]
 fn test_frame_reader_consumes_reader() {
     // Issue #6
-    use bwavfile::{WaveFmt, AudioFrameReader};
+    use bwavfile::{AudioFrameReader, WaveFmt};
     use std::fs::File;
-    fn from_wav_filename(wav_filename: &str) -> Result<(WaveFmt, AudioFrameReader<std::io::BufReader<File>>), ()> {
+    fn from_wav_filename(
+        wav_filename: &str,
+    ) -> Result<(WaveFmt, AudioFrameReader<std::io::BufReader<File>>), ()> {
         if let Ok(mut r) = WaveReader::open(&wav_filename) {
             let format = r.format().unwrap();
             let frame_reader = r.audio_frame_reader().unwrap();
@@ -189,34 +187,34 @@ fn test_cue_read_sounddevices() {
     assert_eq!(cue_points[0].label, None);
     assert_eq!(cue_points[0].note, None);
     assert_eq!(cue_points[0].offset, 90112);
-    
+
     assert_eq!(cue_points[1].frame, 0);
     assert_eq!(cue_points[1].length, None);
     assert_eq!(cue_points[1].label, None);
-    assert_eq!(cue_points[1].note, None); 
+    assert_eq!(cue_points[1].note, None);
     assert_eq!(cue_points[1].offset, 176128);
-     
+
     assert_eq!(cue_points[2].frame, 0);
     assert_eq!(cue_points[2].length, None);
     assert_eq!(cue_points[2].label, None);
-    assert_eq!(cue_points[2].note, None); 
+    assert_eq!(cue_points[2].note, None);
     assert_eq!(cue_points[2].offset, 237568);
 
     assert_eq!(cue_points[3].frame, 0);
     assert_eq!(cue_points[3].length, None);
     assert_eq!(cue_points[3].label, None);
-    assert_eq!(cue_points[3].note, None); 
+    assert_eq!(cue_points[3].note, None);
     assert_eq!(cue_points[3].offset, 294912);
 
     assert_eq!(cue_points[4].frame, 0);
     assert_eq!(cue_points[4].length, None);
     assert_eq!(cue_points[4].label, None);
-    assert_eq!(cue_points[4].note, None); 
+    assert_eq!(cue_points[4].note, None);
     assert_eq!(cue_points[4].offset, 380928);
 
     assert_eq!(cue_points[5].frame, 0);
     assert_eq!(cue_points[5].length, None);
     assert_eq!(cue_points[5].label, None);
-    assert_eq!(cue_points[5].note, None); 
+    assert_eq!(cue_points[5].note, None);
     assert_eq!(cue_points[5].offset, 385024);
 }
