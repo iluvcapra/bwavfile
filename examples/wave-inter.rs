@@ -1,6 +1,6 @@
 //! wave-inter.rs
 //! (c) 2021 Jamie Hardt. All rights reserved.
-//! 
+//!
 //! This program demonstrates combining several wave files into a single
 //! polyphonic wave file.
 
@@ -10,7 +10,7 @@ extern crate bwavfile;
 
 #[macro_use]
 extern crate clap;
-use clap::{Arg, App};
+use clap::{App, Arg};
 
 fn main() -> io::Result<()> {
     let matches = App::new("wave-inter")

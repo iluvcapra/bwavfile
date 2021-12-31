@@ -1,13 +1,15 @@
-use std::{fmt::{Debug,Display}, io};
-use std::error::Error as StdError;
 use super::fourcc::FourCC;
+use std::error::Error as StdError;
+use std::{
+    fmt::{Debug, Display},
+    io,
+};
 
 use uuid;
 
 /// Errors returned by methods in this crate.
 #[derive(Debug)]
 pub enum Error {
-
     /// An `io::Error` occurred
     IOError(io::Error),
 
@@ -16,14 +18,14 @@ pub enum Error {
 
     /// The file does not begin with a recognized WAVE header
     HeaderNotRecognized,
-    
+
     /// A wave file with a 64-bit header does not contain
     /// the required `ds64` metadata element
     MissingRequiredDS64,
 
     /// A data chunk required to complete the operation
     /// is not present in the file
-    ChunkMissing { signature : FourCC },
+    ChunkMissing { signature: FourCC },
 
     /// The file is formatted improperly
     FmtChunkAfterData,
@@ -37,11 +39,10 @@ pub enum Error {
 
     /// The file cannot be converted into an RF64 file due
     /// to its internal structure
-    InsufficientDS64Reservation {expected: u64, actual: u64},
+    InsufficientDS64Reservation { expected: u64, actual: u64 },
 
     /// The file is not optimized for writing new data
     DataChunkNotPreparedForAppend,
-
 }
 
 impl StdError for Error {}
@@ -52,15 +53,14 @@ impl Display for Error {
     }
 }
 
-
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Error {
         Error::IOError(error)
     }
 }
 
-impl From <uuid::Error> for Error {
+impl From<uuid::Error> for Error {
     fn from(error: uuid::Error) -> Error {
         Error::UuidError(error)
-    }  
+    }
 }
