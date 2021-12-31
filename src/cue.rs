@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use super::fourcc::{FourCC,ReadFourCC, WriteFourCC, LABL_SIG, NOTE_SIG, 
     ADTL_SIG, LTXT_SIG, DATA_SIG};
 use super::list_form::collect_list_form;
