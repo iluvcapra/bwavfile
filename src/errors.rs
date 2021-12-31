@@ -1,4 +1,5 @@
-use std::io;
+use std::{fmt::{Debug,Display}, io};
+use std::error::Error as StdError;
 use super::fourcc::FourCC;
 
 use uuid;
@@ -41,6 +42,14 @@ pub enum Error {
     /// The file is not optimized for writing new data
     DataChunkNotPreparedForAppend,
 
+}
+
+impl StdError for Error {}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(self, f)
+    }
 }
 
 

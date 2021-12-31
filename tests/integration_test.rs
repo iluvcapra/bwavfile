@@ -158,7 +158,7 @@ fn test_channels_stereo_no_fmt_extended() {
     assert_eq!(channels[1].speaker,ChannelMask::FrontRight);
 }
 
-//See issue 6 and 7
+///See issue 6 and 7
 #[test]
 fn test_frame_reader_consumes_reader() {
     // Issue #6
@@ -175,4 +175,48 @@ fn test_frame_reader_consumes_reader() {
     }
 
     let _result = from_wav_filename("tests/media/pt_24bit_stereo.wav").unwrap();
+}
+
+///See to PR#10
+#[test]
+fn test_cue_read_sounddevices() {
+    let mut f = WaveReader::open("tests/media/sounddevices_6_cue_points.wav").unwrap();
+    let cue_points = f.cue_points().unwrap();
+    assert_eq!(cue_points.len(), 6);
+
+    assert_eq!(cue_points[0].frame, 0);
+    assert_eq!(cue_points[0].length, None);
+    assert_eq!(cue_points[0].label, None);
+    assert_eq!(cue_points[0].note, None);
+    assert_eq!(cue_points[0].offset, 90112);
+    
+    assert_eq!(cue_points[1].frame, 0);
+    assert_eq!(cue_points[1].length, None);
+    assert_eq!(cue_points[1].label, None);
+    assert_eq!(cue_points[1].note, None); 
+    assert_eq!(cue_points[1].offset, 176128);
+     
+    assert_eq!(cue_points[2].frame, 0);
+    assert_eq!(cue_points[2].length, None);
+    assert_eq!(cue_points[2].label, None);
+    assert_eq!(cue_points[2].note, None); 
+    assert_eq!(cue_points[2].offset, 237568);
+
+    assert_eq!(cue_points[3].frame, 0);
+    assert_eq!(cue_points[3].length, None);
+    assert_eq!(cue_points[3].label, None);
+    assert_eq!(cue_points[3].note, None); 
+    assert_eq!(cue_points[3].offset, 294912);
+
+    assert_eq!(cue_points[4].frame, 0);
+    assert_eq!(cue_points[4].length, None);
+    assert_eq!(cue_points[4].label, None);
+    assert_eq!(cue_points[4].note, None); 
+    assert_eq!(cue_points[4].offset, 380928);
+
+    assert_eq!(cue_points[5].frame, 0);
+    assert_eq!(cue_points[5].length, None);
+    assert_eq!(cue_points[5].label, None);
+    assert_eq!(cue_points[5].note, None); 
+    assert_eq!(cue_points[5].offset, 385024);
 }

@@ -4,72 +4,45 @@
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/iluvcapra/bwavfile/Rust)](https://github.com/iluvcapra/bwavfile/actions?query=workflow%3ARust)
 
 # bwavfile
-Rust Wave File Reader/Writer with Broadcast-WAV, MBWF and RF64 Support
+Wave File Reader/Writer library in Rust, with Broadcast-WAV, MBWF and RF64 Support
 
-### Features
+## Features
 
-This is currently a work-in-progress! However many features presently work:
+__bwavfile__ provides a reader `WaveReader` and writer type `WaveWriter` for 
+reading and creating new audio files respectively.
 
-| Feature                               |Read |Write|
-|---------------------------------------|:---:|:-----:|
-| Standard .wav files                   | ☑️   | ☑️   |
-| Transparent promotion to RF64/BW64    | ☑️   | ☑️   |
-| Unified interface for regular and extended Wave format | ☑️   | ☑️   |
-| Channel/speaker map metadata          | ☑️   | ☑️   |
-| Ambisonic B-format metadata           | ☑️   | ☑️   |
-| EBU Broadcast-WAVE metadata           | ☑️   | ☑️   |
-| Basic iXML/ADM metadata               | ☑️   | ☑️   |
-| Enhanced iXML metadata support        |     |     |
-| ADM `chna` channel metadata           |     |     |
-| Broadcast-WAVE Level overview `levl` metadata     |    |    |
-| Cue list metadata                     | ☑️   |     |
-| Sampler and instrument metadata       |     |     |
-| Enhanced Wave file form validation    | ☑️   |     |
+`WaveReader` and `WaveWriter` support:
+  * A unified interface for standard RIFF and RF64/BW64 64-bit Wave files.
+  * When using `WaveWriter`, wave files are transparently upgraded from RIFF
+    to RF64 when required.
+  * Unpacked reading and writing of Integer PCM and IEEE float audio data 
+    formats.
+  * A unified interface for standard `WaveFormat` and extended `WaveFormatEx`
+    wave data format specification.
+  * Multichannel, surround, and ambisonic audio data description including 
+    surround channel maps, ADM `AudioTrackFormat`, `AudioChannelFormatRef` and 
+    `AudioPackRef` data structures.
+  * Broadcast-Wave metdata extension, including long description, originator 
+    information, SMPTE UMID and coding history.
+  * Reading and writing of embedded iXML and axml/ADM metadata.
+  * Reading and writing of timed cues and and timed cue regions.
+
+### Feature Roadmap
+
+Some features that may be included in the future include:
+  * Broadcast-Wave `levl` waveform overview data reading and writing.
+  * Sampler and Instrument metadata.
+  * Performance improvements.
 
 
 ## Use Examples
 
-### Examples Directory
-
-Check out the [examples](examples) directory for some practical use cases:
-
   * [blits](examples/blits.rs) shows how to use `WaveWriter` to create a new
     file with BLITS alignment tones.
-
-### Reading Audio Frames From a File
-
-```rust
-
- use bwavfile::WaveReader;
- let mut r = WaveReader::open("tests/media/ff_silence.wav").unwrap();
- 
- let format = r.format().unwrap();
- assert_eq!(format.sample_rate, 44100);
- assert_eq!(format.channel_count, 1);
- 
- let mut buffer = format.create_frame_buffer();
- let mut frame_reader = r.audio_frame_reader().unwrap();
- 
- let read = frame_reader.read_integer_frame(&mut buffer).unwrap();
- 
- assert_eq!(buffer, [0i32]);
- assert_eq!(read, 1);
-```
-
-### Accessing Channel Descriptions
-
-```rust
- use bwavfile::{WaveReader, ChannelMask};
- 
- let mut f = WaveReader::open("tests/media/pt_24bit_51.wav").unwrap();
-    
- let chans = f.channels().unwrap();
- assert_eq!(chans[0].index, 0);
- assert_eq!(chans[0].speaker, ChannelMask::FrontLeft);
- assert_eq!(chans[3].index, 3);
- assert_eq!(chans[3].speaker, ChannelMask::LowFrequency);
- assert_eq!(chans[4].speaker, ChannelMask::BackLeft);
-```
+  * [wave-inter](examples/wave-inter.rs) uses `WaveReader` and `WaveWriter` to
+    interleave several input Wave files into a single polyphonic Wave file.
+  * [wave-deinter](examples/wave-deinter.rs) uses `WaveReader` and `WaveWriter`
+    to de-interleave an input Wave file into several monoarual Wave files.
 
 ## Note on Testing
 
