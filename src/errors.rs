@@ -41,6 +41,12 @@ pub enum Error {
 
     /// The file is not optimized for writing new data
     DataChunkNotPreparedForAppend,
+
+    /// A buffer with a length that isn't a multiple of channel_count was provided
+    InvalidBufferSize {
+        buffer_size: usize,
+        channel_count: u16,
+    },
 }
 
 impl StdError for Error {}

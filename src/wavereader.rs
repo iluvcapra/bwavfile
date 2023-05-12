@@ -110,12 +110,12 @@ impl<R: Read + Seek> AudioFrameReader<R> {
         let common_format = self.format.common_format();
         let bits_per_sample = self.format.bits_per_sample;
 
-        assert!(
-            buffer.len() % channel_count == 0,
-            "read_frames was called with a mis-sized buffer, expected a multiple of {}, was {}",
-            channel_count,
-            buffer.len()
-        );
+        if buffer.len() % channel_count != 0 {
+            return Err(Error::InvalidBufferSize {
+                buffer_size: buffer.len(),
+                channel_count: self.format.channel_count,
+            });
+        }
 
         let position = self.inner.stream_position()? - self.start;
         let frames_requested = (buffer.len() / channel_count) as u64;

@@ -37,21 +37,22 @@ where
 
     /// Write interleaved samples in `buffer`
     ///
-    /// # Panics
-    ///
-    /// This function will panic if `buffer.len()` modulo the Wave file's channel count
-    /// is not zero.
-    pub fn write_frames<S>(&mut self, buffer: &[S]) -> Result<u64, Error>
+    /// The writer will convert from the buffer's sample type into the file's sample type.
+    /// Note that no dithering will be applied during sample type conversion,
+    /// if dithering is required then it will need to be applied manually.
+    pub fn write_frames<S>(&mut self, buffer: &[S]) -> Result<(), Error>
     where
         S: Sample,
     {
         let format = &self.inner.inner.format;
         let channel_count = format.channel_count as usize;
 
-        assert!(
-            buffer.len() % channel_count == 0,
-            "frames buffer does not contain a number of samples % channel_count == 0"
-        );
+        if buffer.len() % channel_count != 0 {
+            return Err(Error::InvalidBufferSize {
+                buffer_size: buffer.len(),
+                channel_count: format.channel_count,
+            });
+        }
 
         let mut write_buffer = self
             .inner
