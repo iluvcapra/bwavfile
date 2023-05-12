@@ -117,7 +117,7 @@ where
     }
 
     fn increment_chunk_length(&mut self, amount: u64) -> Result<(), std::io::Error> {
-        self.length = self.length + amount;
+        self.length += amount;
         if !self.inner.is_rf64 {
             self.inner
                 .inner
@@ -383,7 +383,7 @@ where
 
     /// Add `amount` to the RIFF/RF64 form length
     fn increment_form_length(&mut self, amount: u64) -> Result<(), std::io::Error> {
-        self.form_length = self.form_length + amount;
+        self.form_length += amount;
         if self.is_rf64 {
             self.inner.seek(SeekFrom::Start(8 + 4 + 8))?;
             self.inner.write_u64::<LittleEndian>(self.form_length)?;
