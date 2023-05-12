@@ -590,7 +590,7 @@ impl<R: Read + Seek> WaveReader<R> {
                     .map_err(|e| ParserError::IOError(e))
             }
             Err(ParserError::ChunkMissing { signature: _ }) => Ok(0),
-            Err(any) => Err(any.into()),
+            Err(any) => Err(any),
         }
     }
 
