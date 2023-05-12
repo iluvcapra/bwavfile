@@ -33,13 +33,12 @@ where
         AudioFrameWriter { inner }
     }
 
-    fn write_integer_frames_to_buffer(&self, from_frames: &[i32], to_buffer: &mut [u8]) -> () {
+    fn write_integer_frames_to_buffer(&self, from_frames: &[i32], to_buffer: &mut [u8]) {
         assert!(
             from_frames.len() % self.inner.inner.format.channel_count as usize == 0,
             "frames buffer does not contain a number of samples % channel_count == 0"
         );
         self.inner.inner.format.pack_frames(from_frames, to_buffer);
-        ()
     }
 
     /// Write interleaved samples in `buffer`

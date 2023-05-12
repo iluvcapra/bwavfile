@@ -320,7 +320,7 @@ impl WaveFmt {
     }
 
     /// Write frames into a byte vector
-    pub fn pack_frames(&self, from_frames: &[i32], into_bytes: &mut [u8]) -> () {
+    pub fn pack_frames(&self, from_frames: &[i32], into_bytes: &mut [u8]) {
         let mut write_cursor = Cursor::new(into_bytes);
 
         assert!(
@@ -338,11 +338,10 @@ impl WaveFmt {
                         b, self.channel_count, self.block_alignment)
                 }
         }
-        ()
     }
 
     /// Read bytes into frames
-    pub fn unpack_frames(&self, from_bytes: &[u8], into_frames: &mut [i32]) -> () {
+    pub fn unpack_frames(&self, from_bytes: &[u8], into_frames: &mut [i32]) {
         let mut rdr = Cursor::new(from_bytes);
         for frame in into_frames {
             *frame = match (self.valid_bits_per_sample(), self.bits_per_sample) {
