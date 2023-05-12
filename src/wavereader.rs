@@ -119,8 +119,8 @@ impl<R: Read + Seek> AudioFrameReader<R> {
         let tell = self.inner.stream_position()?;
 
         if (tell - self.start) < self.length {
-            for n in 0..(self.format.channel_count as usize) {
-                buffer[n] = match (self.format.bits_per_sample, framed_bits_per_sample) {
+            for sample in buffer.iter_mut().take(self.format.channel_count as usize) {
+                *sample = match (self.format.bits_per_sample, framed_bits_per_sample) {
                     (0..=8,8) => self.inner.read_u8()? as i32 - 0x80_i32, // EBU 3285 §A2.2
                     (9..=16,16) => self.inner.read_i16::<LittleEndian>()? as i32,
                     (10..=24,24) => self.inner.read_i24::<LittleEndian>()?,
@@ -148,8 +148,8 @@ impl<R: Read + Seek> AudioFrameReader<R> {
         let tell = self.inner.stream_position()?;
 
         if (tell - self.start) < self.length {
-            for n in 0..(self.format.channel_count as usize) {
-                buffer[n] = match (self.format.bits_per_sample, framed_bits_per_sample) {
+            for sample in buffer.iter_mut().take(self.format.channel_count as usize) {
+                *sample = match (self.format.bits_per_sample, framed_bits_per_sample) {
                     (25..=32,32) => self.inner.read_f32::<LittleEndian>()?,
                     (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}",
                         b, self.format.channel_count, self.format.block_alignment)

@@ -328,12 +328,12 @@ impl WaveFmt {
             "frames buffer does not contain a number of samples % channel_count == 0"
         );
 
-        for n in 0..from_frames.len() {
+        for frame in from_frames {
             match (self.valid_bits_per_sample(), self.bits_per_sample) {
-                    (0..=8,8) => write_cursor.write_u8((from_frames[n] + 0x80) as u8 ).unwrap(), // EBU 3285 §A2.2
-                    (9..=16,16) => write_cursor.write_i16::<LittleEndian>(from_frames[n] as i16).unwrap(),
-                    (10..=24,24) => write_cursor.write_i24::<LittleEndian>(from_frames[n]).unwrap(),
-                    (25..=32,32) => write_cursor.write_i32::<LittleEndian>(from_frames[n]).unwrap(),
+                    (0..=8,8) => write_cursor.write_u8((frame + 0x80) as u8 ).unwrap(), // EBU 3285 §A2.2
+                    (9..=16,16) => write_cursor.write_i16::<LittleEndian>(*frame as i16).unwrap(),
+                    (10..=24,24) => write_cursor.write_i24::<LittleEndian>(*frame).unwrap(),
+                    (25..=32,32) => write_cursor.write_i32::<LittleEndian>(*frame).unwrap(),
                     (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
                         b, self.channel_count, self.block_alignment)
                 }
@@ -344,8 +344,8 @@ impl WaveFmt {
     /// Read bytes into frames
     pub fn unpack_frames(&self, from_bytes: &[u8], into_frames: &mut [i32]) -> () {
         let mut rdr = Cursor::new(from_bytes);
-        for n in 0..(into_frames.len()) {
-            into_frames[n] = match (self.valid_bits_per_sample(), self.bits_per_sample) {
+        for frame in into_frames {
+            *frame = match (self.valid_bits_per_sample(), self.bits_per_sample) {
                 (0..=8,8) => rdr.read_u8().unwrap() as i32 - 0x80_i32, // EBU 3285 §A2.2
                 (9..=16,16) => rdr.read_i16::<LittleEndian>().unwrap() as i32,
                 (10..=24,24) => rdr.read_i24::<LittleEndian>().unwrap(),
@@ -421,8 +421,8 @@ where
     ) -> Result<usize, std::io::Error> {
         assert!(into.len() % format.channel_count as usize == 0);
 
-        for n in 0..(into.len()) {
-            into[n] = match (format.valid_bits_per_sample(), format.bits_per_sample) {
+        for frame in into {
+            *frame = match (format.valid_bits_per_sample(), format.bits_per_sample) {
                 (0..=8,8) => self.read_u8().unwrap() as i32 - 0x80_i32, // EBU 3285 §A2.2
                 (9..=16,16) => self.read_i16::<LittleEndian>().unwrap() as i32,
                 (10..=24,24) => self.read_i24::<LittleEndian>().unwrap(),
