@@ -288,12 +288,7 @@ impl<R: Read + Seek> Parser<R> {
     fn advance(&mut self) -> (Option<Event>, State) {
         match self.handle_state() {
             Ok((event, state)) => (event, state),
-            Err(error) => (
-                Some(Event::Failed {
-                    error: error.into(),
-                }),
-                State::Error,
-            ),
+            Err(error) => (Some(Event::Failed { error }), State::Error),
         }
     }
 }
