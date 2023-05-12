@@ -298,7 +298,7 @@ fn convert_to_cue_string(buffer: &[u8]) -> String {
 
 fn convert_from_cue_string(val: &str) -> Vec<u8> {
     ASCII
-        .encode(&val, EncoderTrap::Ignore)
+        .encode(val, EncoderTrap::Ignore)
         .expect("Error encoding text")
 }
 
@@ -319,12 +319,12 @@ impl Cue {
 
                 let raw_label = cue.label.as_ref().map(|val| RawLabel {
                     cue_point_id: n as u32,
-                    text: convert_from_cue_string(&val),
+                    text: convert_from_cue_string(val),
                 });
 
                 let raw_note = cue.note.as_ref().map(|val| RawNote {
                     cue_point_id: n as u32,
-                    text: convert_from_cue_string(&val),
+                    text: convert_from_cue_string(val),
                 });
 
                 let raw_ltxt = cue.length.map(|val| RawLtxt {

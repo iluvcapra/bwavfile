@@ -38,7 +38,7 @@ where
             from_frames.len() % self.inner.inner.format.channel_count as usize == 0,
             "frames buffer does not contain a number of samples % channel_count == 0"
         );
-        self.inner.inner.format.pack_frames(&from_frames, to_buffer);
+        self.inner.inner.format.pack_frames(from_frames, to_buffer);
         ()
     }
 
@@ -55,7 +55,7 @@ where
             .format
             .create_raw_buffer(buffer.len() / self.inner.inner.format.channel_count as usize);
 
-        self.write_integer_frames_to_buffer(&buffer, &mut write_buffer);
+        self.write_integer_frames_to_buffer(buffer, &mut write_buffer);
 
         self.inner.write(&write_buffer)?;
         self.inner.flush()?;
@@ -317,7 +317,7 @@ where
     pub fn write_broadcast_metadata(&mut self, bext: &Bext) -> Result<(), Error> {
         //FIXME Implement re-writing
         let mut c = Cursor::new(vec![0u8; 0]);
-        c.write_bext(&bext)?;
+        c.write_bext(bext)?;
         let buf = c.into_inner();
         self.write_chunk(BEXT_SIG, &buf)?;
         Ok(())
@@ -326,13 +326,13 @@ where
     /// Write iXML metadata
     pub fn write_ixml(&mut self, ixml: &[u8]) -> Result<(), Error> {
         //FIXME Implement re-writing
-        self.write_chunk(IXML_SIG, &ixml)
+        self.write_chunk(IXML_SIG, ixml)
     }
 
     /// Write axml/ADM metadata
     pub fn write_axml(&mut self, axml: &[u8]) -> Result<(), Error> {
         //FIXME Implement re-writing
-        self.write_chunk(AXML_SIG, &axml)
+        self.write_chunk(AXML_SIG, axml)
     }
 
     /// Write a `JUNK` filler chunk

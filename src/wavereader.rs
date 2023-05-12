@@ -579,15 +579,13 @@ impl<R: Read + Seek> WaveReader<R> {
         &mut self,
         ident: FourCC,
         at: u32,
-        mut buffer: &mut Vec<u8>,
+        buffer: &mut Vec<u8>,
     ) -> Result<usize, ParserError> {
         match self.get_chunk_extent_at_index(ident, at) {
             Ok((start, length)) => {
                 buffer.resize(length as usize, 0x0);
                 self.inner.seek(SeekFrom::Start(start))?;
-                self.inner
-                    .read(&mut buffer)
-                    .map_err(|e| ParserError::IOError(e))
+                self.inner.read(buffer).map_err(|e| ParserError::IOError(e))
             }
             Err(ParserError::ChunkMissing { signature: _ }) => Ok(0),
             Err(any) => Err(any),
