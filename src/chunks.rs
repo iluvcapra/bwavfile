@@ -142,7 +142,7 @@ where
 
     fn read_bext_string_field(&mut self, length: usize) -> Result<String, ParserError> {
         let mut buffer: Vec<u8> = vec![0; length];
-        self.read(&mut buffer)?;
+        self.read_exact(&mut buffer)?;
         let trimmed: Vec<u8> = buffer.iter().take_while(|c| **c != 0_u8).cloned().collect();
         Ok(ASCII
             .decode(&trimmed, DecoderTrap::Ignore)
@@ -164,7 +164,7 @@ where
             },
             umid: {
                 let mut buf = [0u8; 64];
-                self.read(&mut buf)?;
+                self.read_exact(&mut buf)?;
                 if version > 0 {
                     Some(buf)
                 } else {
