@@ -1,8 +1,8 @@
-//! wave-inter.rs
+//! wave-deinter.rs
 //! (c) 2021 Jamie Hardt. All rights reserved.
 //!
-//! This program demonstrats combining several wave files into a single
-//! polyphonic wave file.
+//! This program demonstrates splitting a multichannel file into separate monophonic files for each
+//! individual channel.
 
 use std::io;
 use std::path::Path;
