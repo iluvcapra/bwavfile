@@ -622,7 +622,7 @@ impl<R: Read + Seek> WaveReader<R> {
         fourcc: FourCC,
         index: u32,
     ) -> Result<(u64, u64), ParserError> {
-        if let Some((start, length)) = self.get_chunks_extents(fourcc)?.iter().nth(index as usize) {
+        if let Some((start, length)) = self.get_chunks_extents(fourcc)?.get(index as usize) {
             Ok((*start, *length))
         } else {
             Err(ParserError::ChunkMissing { signature: fourcc })
