@@ -110,7 +110,7 @@ where
     fn end(mut self) -> Result<WaveWriter<W>, Error> {
         if self.length % 2 == 1 {
             self.inner.inner.seek(SeekFrom::End(0))?;
-            self.inner.inner.write(&[0u8])?;
+            self.inner.inner.write_u8(0)?;
             self.inner.increment_form_length(1)?;
         }
         Ok(self.inner)
@@ -303,7 +303,7 @@ where
         if data.len() % 2 == 0 {
             self.increment_form_length(8 + data.len() as u64)?;
         } else {
-            self.inner.write(&[0u8])?;
+            self.inner.write_u8(0)?;
             self.increment_form_length(8 + data.len() as u64 + 1)?;
         }
         Ok(())
