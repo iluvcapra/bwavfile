@@ -2,12 +2,14 @@ use std::fs::File;
 use std::io::{BufWriter, Cursor, Seek, SeekFrom, Write};
 use std::path::Path;
 
+use crate::CommonFormat;
+
 use super::fmt::WaveFmt;
 use super::fourcc::{
     FourCC, WriteFourCC, AXML_SIG, BEXT_SIG, DATA_SIG, DS64_SIG, ELM1_SIG, FMT__SIG, IXML_SIG,
     JUNK_SIG, RF64_SIG, RIFF_SIG, WAVE_SIG,
 };
-use super::Error;
+use super::{Error, Sample, I24};
 //use super::common_format::CommonFormat;
 use super::bext::Bext;
 use super::chunks::WriteBWaveChunks;
@@ -33,28 +35,67 @@ where
         AudioFrameWriter { inner }
     }
 
-    fn write_integer_frames_to_buffer(&self, from_frames: &[i32], to_buffer: &mut [u8]) {
-        assert!(
-            from_frames.len() % self.inner.inner.format.channel_count as usize == 0,
-            "frames buffer does not contain a number of samples % channel_count == 0"
-        );
-        self.inner.inner.format.pack_frames(from_frames, to_buffer);
-    }
-
     /// Write interleaved samples in `buffer`
     ///
     /// # Panics
     ///
     /// This function will panic if `buffer.len()` modulo the Wave file's channel count
     /// is not zero.
-    pub fn write_integer_frames(&mut self, buffer: &[i32]) -> Result<u64, Error> {
+    pub fn write_frames<S>(&mut self, buffer: &[S]) -> Result<u64, Error>
+    where
+        S: Sample,
+    {
+        let format = &self.inner.inner.format;
+        let channel_count = format.channel_count as usize;
+
+        assert!(
+            buffer.len() % channel_count == 0,
+            "frames buffer does not contain a number of samples % channel_count == 0"
+        );
+
         let mut write_buffer = self
             .inner
             .inner
             .format
-            .create_raw_buffer(buffer.len() / self.inner.inner.format.channel_count as usize);
+            .create_raw_buffer(buffer.len() / channel_count);
 
-        self.write_integer_frames_to_buffer(buffer, &mut write_buffer);
+        let into_bytes: &mut [u8] = &mut write_buffer;
+        let mut write_cursor = Cursor::new(into_bytes);
+
+        let common_format = format.common_format();
+        let bits_per_sample = format.bits_per_sample;
+
+        match (common_format, bits_per_sample) {
+            (_, 8) => {
+                for sample in buffer {
+                    write_cursor.write_u8(sample.to_sample())?
+                }
+            }
+            (_, 16) => {
+                for sample in buffer {
+                    write_cursor.write_i16::<LittleEndian>(sample.to_sample())?
+                }
+            }
+            (_, 24) => {
+                for sample in buffer {
+                    write_cursor.write_i24::<LittleEndian>(sample.to_sample::<I24>().inner())?
+                }
+            }
+            (CommonFormat::IntegerPCM, 32) => {
+                for sample in buffer {
+                    write_cursor.write_i32::<LittleEndian>(sample.to_sample())?
+                }
+            }
+            (CommonFormat::IeeeFloatPCM, 32) => {
+                for sample in buffer {
+                    write_cursor.write_f32::<LittleEndian>(sample.to_sample())?
+                }
+            }
+            (_, _) => panic!(
+                "Unrecognized format, bits per sample {}, channels {}, sample format {:?}",
+                bits_per_sample, channel_count, common_format
+            ),
+        }
 
         self.inner.write_all(&write_buffer)?;
         Ok(write_buffer.len() as u64 / self.inner.inner.format.channel_count as u64)
@@ -194,9 +235,9 @@ where
 ///
 /// let mut frame_writer = w.audio_frame_writer().unwrap();
 ///
-/// frame_writer.write_integer_frames(&[0i32]).unwrap();
-/// frame_writer.write_integer_frames(&[0i32]).unwrap();
-/// frame_writer.write_integer_frames(&[0i32]).unwrap();
+/// frame_writer.write_frames(&[0i32]).unwrap();
+/// frame_writer.write_frames(&[0i32]).unwrap();
+/// frame_writer.write_frames(&[0i32]).unwrap();
 /// frame_writer.end().unwrap();
 /// ```
 ///
@@ -432,9 +473,9 @@ fn test_write_audio() {
 
     let mut frame_writer = w.audio_frame_writer().unwrap();
 
-    frame_writer.write_integer_frames(&[0i32]).unwrap();
-    frame_writer.write_integer_frames(&[0i32]).unwrap();
-    frame_writer.write_integer_frames(&[0i32]).unwrap();
+    frame_writer.write_frames(&[0i32]).unwrap();
+    frame_writer.write_frames(&[0i32]).unwrap();
+    frame_writer.write_frames(&[0i32]).unwrap();
 
     frame_writer.end().unwrap();
 
@@ -500,14 +541,14 @@ fn test_write_bext() {
 
     let mut frame_writer = w.audio_frame_writer().unwrap();
 
-    frame_writer.write_integer_frames(&[0i32]).unwrap();
-    frame_writer.write_integer_frames(&[0i32]).unwrap();
-    frame_writer.write_integer_frames(&[0i32]).unwrap();
+    frame_writer.write_frames(&[0i32]).unwrap();
+    frame_writer.write_frames(&[0i32]).unwrap();
+    frame_writer.write_frames(&[0i32]).unwrap();
 
     frame_writer.end().unwrap();
 }
 
-// NOTE! This test of RF64 writing takes several minutes to complete.
+// NOTE! This test of RF64 writing takes several minutes to complete in debug builds
 #[test]
 fn test_create_rf64() {
     use super::fourcc::ReadFourCC;
@@ -526,7 +567,7 @@ fn test_create_rf64() {
     let mut af = w.audio_frame_writer().unwrap();
 
     for _ in 0..(four_and_a_half_hours_of_frames * format.channel_count as u64 / buflen) {
-        af.write_integer_frames(&buf).unwrap();
+        af.write_frames(&buf).unwrap();
     }
     af.end().unwrap();
 

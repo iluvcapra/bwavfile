@@ -4,11 +4,14 @@
 //! This program demonstrates splitting a multichannel file into separate monophonic files for each
 //! individual channel.
 
-use std::io;
+use std::io::{Read, Seek};
 use std::path::Path;
 
 extern crate bwavfile;
-use bwavfile::{ChannelDescriptor, ChannelMask, Error, WaveFmt, WaveReader, WaveWriter};
+use bwavfile::{
+    ChannelDescriptor, ChannelMask, CommonFormat, Error, Sample, WaveFmt, WaveReader, WaveWriter,
+    I24,
+};
 
 #[macro_use]
 extern crate clap;
@@ -48,17 +51,25 @@ fn name_suffix(
     }
 }
 
-fn process_file(infile: &str, delim: &str, numeric_channel_names: bool) -> Result<(), Error> {
-    let mut input_file = WaveReader::open(infile)?;
+fn deinterleave_file<S, R>(
+    mut input_file: WaveReader<R>,
+    input_format: WaveFmt,
+    settings: Settings,
+) -> Result<(), Error>
+where
+    S: Sample,
+    R: Read + Seek,
+{
+    let frames_per_read = 4096;
     let channel_desc = input_file.channels()?;
-    let input_format = input_file.format()?;
+    let channel_count = channel_desc.len();
 
     if channel_desc.len() == 1 {
         println!("Input file in monoaural, exiting.");
         return Ok(());
     }
 
-    let infile_path = Path::new(infile);
+    let infile_path = Path::new(&settings.input_path);
     let basename = infile_path
         .file_stem()
         .expect("Unable to extract file basename")
@@ -68,41 +79,91 @@ fn process_file(infile: &str, delim: &str, numeric_channel_names: bool) -> Resul
         .parent()
         .expect("Unable to derive parent directory");
 
-    let ouptut_format =
-        WaveFmt::new_pcm_mono(input_format.sample_rate, input_format.bits_per_sample);
-    let mut input_wave_reader = input_file.audio_frame_reader()?;
-    let mut output_wave_writers = channel_desc
+    let output_block_alignment = input_format.bits_per_sample / 8;
+    let output_format = WaveFmt {
+        channel_count: 1,
+        block_alignment: output_block_alignment,
+        bytes_per_second: output_block_alignment as u32 * input_format.sample_rate,
+        ..input_format
+    };
+    let mut reader = input_file.audio_frame_reader()?;
+    let mut writers = channel_desc
         .iter()
         .enumerate()
         .map(|(n, channel)| {
-            let suffix = name_suffix(numeric_channel_names, delim, n + 1, channel);
+            let suffix = name_suffix(
+                settings.use_numeric_names,
+                &settings.delimiter,
+                n + 1,
+                channel,
+            );
             let outfile_name = output_dir
                 .join(format!("{}{}.wav", basename, suffix))
                 .into_os_string()
                 .into_string()
                 .unwrap();
 
-            WaveWriter::create(&outfile_name, ouptut_format)
+            println!("Will create file {}", outfile_name);
+
+            WaveWriter::create(&outfile_name, output_format)
                 .expect("Failed to create new file")
                 .audio_frame_writer()
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    let mut buffer = input_format.create_frame_buffer(1);
-    while input_wave_reader.read_integer_frame(&mut buffer)? > 0 {
-        for (n, writer) in output_wave_writers.iter_mut().enumerate() {
-            writer.write_integer_frames(&buffer[n..=n])?;
+    let mut input_buffer = vec![S::EQUILIBRIUM; frames_per_read * channel_count];
+    let mut output_buffer = vec![S::EQUILIBRIUM; frames_per_read];
+
+    loop {
+        let frames_read = reader.read_frames(&mut input_buffer)? as usize;
+        if frames_read == 0 {
+            break;
+        }
+
+        output_buffer.resize(frames_read, S::EQUILIBRIUM);
+
+        for (n, writer) in writers.iter_mut().enumerate() {
+            for (output, input) in output_buffer
+                .iter_mut()
+                .zip(input_buffer.iter().skip(n).step_by(channel_count))
+            {
+                *output = *input;
+            }
+            writer.write_frames(&output_buffer)?;
         }
     }
 
-    for writer in output_wave_writers.drain(..) {
+    for writer in writers.drain(..) {
         writer.end()?;
     }
 
     Ok(())
 }
 
-fn main() -> io::Result<()> {
+fn process_file<R>(mut input: WaveReader<R>, settings: Settings) -> Result<(), Error>
+where
+    R: Read + Seek,
+{
+    let format = input.format()?;
+
+    use CommonFormat::*;
+    match (format.common_format(), format.bits_per_sample) {
+        (IntegerPCM, 8) => deinterleave_file::<u8, R>(input, format, settings),
+        (IntegerPCM, 16) => deinterleave_file::<i16, R>(input, format, settings),
+        (IntegerPCM, 24) => deinterleave_file::<I24, R>(input, format, settings),
+        (IntegerPCM, 32) => deinterleave_file::<i32, R>(input, format, settings),
+        (IeeeFloatPCM, 32) => deinterleave_file::<f32, R>(input, format, settings),
+        other => panic!("Unsupported format: {:?}", other),
+    }
+}
+
+struct Settings {
+    input_path: String,
+    delimiter: String,
+    use_numeric_names: bool,
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("wave-deinter")
         .version(crate_version!())
         .author(crate_authors!())
@@ -129,13 +190,12 @@ fn main() -> io::Result<()> {
         )
         .get_matches();
 
-    let delimiter = matches.value_of("channel_delimiter").unwrap();
-    let use_numeric_names = matches.is_present("numeric_names");
-    let infile = matches.value_of("INPUT").unwrap();
+    let settings = Settings {
+        input_path: matches.value_of("INPUT").unwrap().into(),
+        delimiter: matches.value_of("channel_delimiter").unwrap().into(),
+        use_numeric_names: matches.is_present("numeric_names"),
+    };
 
-    match process_file(infile, delimiter, use_numeric_names) {
-        Err(Error::IOError(io)) => Err(io),
-        Err(e) => panic!("Error: {:?}", e),
-        Ok(()) => Ok(()),
-    }
+    process_file(WaveReader::open(&settings.input_path)?, settings)?;
+    Ok(())
 }

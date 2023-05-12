@@ -18,10 +18,12 @@ use super::fourcc::{
     IXML_SIG, JUNK_SIG, LIST_SIG,
 };
 use super::parser::Parser;
-use super::CommonFormat;
+use super::{CommonFormat, Sample, I24};
 
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
+
+use dasp_sample::Sample as _; // Expose to_sample()
 
 /// Read audio frames
 ///
@@ -88,78 +90,79 @@ impl<R: Read + Seek> AudioFrameReader<R> {
         Ok((seek_result - self.start) / self.format.block_alignment as u64)
     }
 
-    /// Read a frame
+    /// Reads frames from the file into the provided buffer
     ///
-    /// A single frame is read from the audio stream and the read location
-    /// is advanced one frame.
+    /// The function will attempt to fill the buffer, but will stop without error when the end of
+    /// the file is reached.
     ///
-    /// Regardless of the number of bits in the audio sample, this method
-    /// always writes `i32` samples back to the buffer. These samples are
-    /// written back "right-aligned" so samples that are shorter than i32
-    /// will leave the MSB bits empty.
+    /// The reader will convert from the file's sample type into the buffer's sample type.
+    /// Note that no dithering will be applied during sample type conversion,
+    /// if dithering is required then it will need to be applied manually.
     ///
-    /// For example: A full-code sample in 16 bit (0xFFFF) will be written
-    /// back to the buffer as 0x0000FFFF.
-    ///  
-    ///
-    /// ### Panics
-    ///
-    /// The `buffer` must have a number of elements equal to the number of
-    /// channels and this method will panic if this is not the case.
-    pub fn read_integer_frame(&mut self, buffer: &mut [i32]) -> Result<u64, Error> {
+    /// The return value is the number of frames read into the buffer.
+    pub fn read_frames<S>(&mut self, buffer: &mut [S]) -> Result<u64, Error>
+    where
+        S: Sample,
+    {
+        use CommonFormat::*;
+
+        let channel_count = self.format.channel_count as usize;
+        let common_format = self.format.common_format();
+        let bits_per_sample = self.format.bits_per_sample;
+
         assert!(
-            buffer.len() as u16 == self.format.channel_count,
-            "read_integer_frame was called with a mis-sized buffer, expected {}, was {}",
-            self.format.channel_count,
+            buffer.len() % channel_count == 0,
+            "read_frames was called with a mis-sized buffer, expected a multiple of {}, was {}",
+            channel_count,
             buffer.len()
         );
 
-        let framed_bits_per_sample = self.format.block_alignment * 8 / self.format.channel_count;
+        let position = self.inner.stream_position()? - self.start;
+        let frames_requested = (buffer.len() / channel_count) as u64;
+        let bytes_per_frame = self.format.block_alignment as u64;
+        let frames_remaining = (self.length - position) / bytes_per_frame;
+        let frames_to_read = frames_requested.min(frames_remaining);
+        let samples_to_read = frames_to_read as usize * channel_count;
 
-        let tell = self.inner.stream_position()?;
+        match (common_format, bits_per_sample) {
+            (IntegerPCM, 8) => read_into_buffer(samples_to_read, buffer, || {
+                Ok(self.inner.read_u8()?.to_sample())
+            }),
+            (IntegerPCM, 16) => read_into_buffer(samples_to_read, buffer, || {
+                Ok(self.inner.read_i16::<LittleEndian>()?.to_sample())
+            }),
+            (IntegerPCM, 24) => read_into_buffer(samples_to_read, buffer, || {
+                Ok(I24::from(self.inner.read_i24::<LittleEndian>()?).to_sample())
+            }),
+            (IntegerPCM, 32) => read_into_buffer(samples_to_read, buffer, || {
+                Ok(self.inner.read_i32::<LittleEndian>()?.to_sample())
+            }),
+            (IeeeFloatPCM, 32) => read_into_buffer(samples_to_read, buffer, || {
+                Ok(self.inner.read_f32::<LittleEndian>()?.to_sample())
+            }),
+            (_, _) => panic!(
+                "Unsupported format, bits per sample {}, channels {}, sample format: {:?}",
+                bits_per_sample, channel_count, common_format
+            ),
+        }?;
 
-        if (tell - self.start) < self.length {
-            for sample in buffer.iter_mut().take(self.format.channel_count as usize) {
-                *sample = match (self.format.bits_per_sample, framed_bits_per_sample) {
-                    (0..=8,8) => self.inner.read_u8()? as i32 - 0x80_i32, // EBU 3285 §A2.2
-                    (9..=16,16) => self.inner.read_i16::<LittleEndian>()? as i32,
-                    (10..=24,24) => self.inner.read_i24::<LittleEndian>()?,
-                    (25..=32,32) => self.inner.read_i32::<LittleEndian>()?,
-                    (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
-                        b, self.format.channel_count, self.format.block_alignment)
-                }
-            }
-            Ok(1)
-        } else {
-            Ok(0)
-        }
+        Ok(frames_to_read)
+    }
+}
+
+fn read_into_buffer<S, F>(
+    sample_count: usize,
+    buffer: &mut [S],
+    mut read_fn: F,
+) -> Result<(), Error>
+where
+    F: FnMut() -> Result<S, Error>,
+{
+    for output in buffer.iter_mut().take(sample_count) {
+        *output = read_fn()?;
     }
 
-    pub fn read_float_frame(&mut self, buffer: &mut [f32]) -> Result<u64, Error> {
-        assert!(
-            buffer.len() as u16 == self.format.channel_count,
-            "read_float_frame was called with a mis-sized buffer, expected {}, was {}",
-            self.format.channel_count,
-            buffer.len()
-        );
-
-        let framed_bits_per_sample = self.format.block_alignment * 8 / self.format.channel_count;
-
-        let tell = self.inner.stream_position()?;
-
-        if (tell - self.start) < self.length {
-            for sample in buffer.iter_mut().take(self.format.channel_count as usize) {
-                *sample = match (self.format.bits_per_sample, framed_bits_per_sample) {
-                    (25..=32,32) => self.inner.read_f32::<LittleEndian>()?,
-                    (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}",
-                        b, self.format.channel_count, self.format.block_alignment)
-                }
-            }
-            Ok(1)
-        } else {
-            Ok(0)
-        }
-    }
+    Ok(())
 }
 
 /// Wave, Broadcast-WAV and RF64/BW64 parser/reader.
@@ -173,9 +176,9 @@ impl<R: Read + Seek> AudioFrameReader<R> {
 /// assert_eq!(format.channel_count, 1);
 ///
 /// let mut frame_reader = r.audio_frame_reader().unwrap();
-/// let mut buffer = format.create_frame_buffer(1);
+/// let mut buffer = format.create_frame_buffer::<i32>(1);
 ///
-/// let read = frame_reader.read_integer_frame(&mut buffer).unwrap();
+/// let read = frame_reader.read_frames(&mut buffer).unwrap();
 ///
 /// assert_eq!(buffer, [0i32]);
 /// assert_eq!(read, 1);

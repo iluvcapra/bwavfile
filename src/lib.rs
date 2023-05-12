@@ -52,6 +52,8 @@ mod chunks;
 mod cue;
 mod fmt;
 
+mod sample;
+
 mod wavereader;
 mod wavewriter;
 
@@ -60,5 +62,6 @@ pub use common_format::CommonFormat;
 pub use cue::Cue;
 pub use errors::Error;
 pub use fmt::{ADMAudioID, ChannelDescriptor, ChannelMask, WaveFmt, WaveFmtExtended};
+pub use sample::{Sample, I24};
 pub use wavereader::{AudioFrameReader, WaveReader};
 pub use wavewriter::{AudioFrameWriter, WaveWriter};

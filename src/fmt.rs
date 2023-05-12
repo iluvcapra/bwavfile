@@ -1,9 +1,11 @@
-use super::common_format::{CommonFormat, UUID_BFORMAT_PCM, UUID_PCM};
+use crate::common_format::{CommonFormat, UUID_BFORMAT_PCM, UUID_PCM};
+use crate::Sample;
+
 use std::io::Cursor;
 use uuid::Uuid;
 
 use byteorder::LittleEndian;
-use byteorder::{ReadBytesExt, WriteBytesExt};
+use byteorder::ReadBytesExt;
 
 // Need more test cases for ADMAudioID
 #[allow(dead_code)]
@@ -309,35 +311,14 @@ impl WaveFmt {
     ///
     /// This is a conveneince method that creates a `Vec<i32>` with
     /// as many elements as there are channels in the underlying stream.
-    pub fn create_frame_buffer(&self, length: usize) -> Vec<i32> {
-        vec![0i32; self.channel_count as usize * length]
+    pub fn create_frame_buffer<S: Sample>(&self, length: usize) -> Vec<S> {
+        vec![S::EQUILIBRIUM; self.channel_count as usize * length]
     }
 
     /// Create a raw byte buffer to hold `length` blocks from a reader or
     /// writer
     pub fn create_raw_buffer(&self, length: usize) -> Vec<u8> {
         vec![0u8; self.block_alignment as usize * length]
-    }
-
-    /// Write frames into a byte vector
-    pub fn pack_frames(&self, from_frames: &[i32], into_bytes: &mut [u8]) {
-        let mut write_cursor = Cursor::new(into_bytes);
-
-        assert!(
-            from_frames.len() % self.channel_count as usize == 0,
-            "frames buffer does not contain a number of samples % channel_count == 0"
-        );
-
-        for frame in from_frames {
-            match (self.valid_bits_per_sample(), self.bits_per_sample) {
-                    (0..=8,8) => write_cursor.write_u8((frame + 0x80) as u8 ).unwrap(), // EBU 3285 §A2.2
-                    (9..=16,16) => write_cursor.write_i16::<LittleEndian>(*frame as i16).unwrap(),
-                    (10..=24,24) => write_cursor.write_i24::<LittleEndian>(*frame).unwrap(),
-                    (25..=32,32) => write_cursor.write_i32::<LittleEndian>(*frame).unwrap(),
-                    (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
-                        b, self.channel_count, self.block_alignment)
-                }
-        }
     }
 
     /// Read bytes into frames
