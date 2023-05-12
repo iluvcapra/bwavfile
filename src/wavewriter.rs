@@ -25,6 +25,7 @@ where
     W: Write + Seek,
 {
     inner: WaveChunkWriter<W>,
+    write_buffer: Vec<u8>,
 }
 
 impl<W> AudioFrameWriter<W>
@@ -32,7 +33,10 @@ where
     W: Write + Seek,
 {
     fn new(inner: WaveChunkWriter<W>) -> Self {
-        AudioFrameWriter { inner }
+        AudioFrameWriter {
+            inner,
+            write_buffer: Vec::new(),
+        }
     }
 
     /// Write interleaved samples in `buffer`
@@ -54,14 +58,11 @@ where
             });
         }
 
-        let mut write_buffer = self
-            .inner
-            .inner
-            .format
-            .create_raw_buffer(buffer.len() / channel_count);
+        let frame_count = buffer.len() / channel_count;
+        let write_buffer_size = format.block_alignment as usize * frame_count;
+        self.write_buffer.resize(write_buffer_size, 0);
 
-        let into_bytes: &mut [u8] = &mut write_buffer;
-        let mut write_cursor = Cursor::new(into_bytes);
+        let mut write_cursor = Cursor::new(&mut self.write_buffer);
 
         let common_format = format.common_format();
         let bits_per_sample = format.bits_per_sample;
@@ -98,8 +99,8 @@ where
             ),
         }
 
-        self.inner.write_all(&write_buffer)?;
-        Ok(write_buffer.len() as u64 / self.inner.inner.format.channel_count as u64)
+        self.inner.write_all(&self.write_buffer)?;
+        Ok(())
     }
 
     /// Finish writing audio frames and unwrap the inner `WaveWriter`.
