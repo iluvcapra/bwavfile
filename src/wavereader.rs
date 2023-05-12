@@ -585,7 +585,7 @@ impl<R: Read + Seek> WaveReader<R> {
             Ok((start, length)) => {
                 buffer.resize(length as usize, 0x0);
                 self.inner.seek(SeekFrom::Start(start))?;
-                self.inner.read(buffer).map_err(|e| ParserError::IOError(e))
+                self.inner.read(buffer).map_err(ParserError::IOError)
             }
             Err(ParserError::ChunkMissing { signature: _ }) => Ok(0),
             Err(any) => Err(any),

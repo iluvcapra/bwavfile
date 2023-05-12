@@ -105,7 +105,7 @@ impl ChannelMask {
             (0..18)
                 .map(|i| 1 << i)
                 .filter(|mask| mask & input_mask > 0)
-                .map(|mask| Into::<ChannelMask>::into(mask))
+                .map(ChannelMask::from)
                 .collect()
         }
     }
