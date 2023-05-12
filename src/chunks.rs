@@ -46,7 +46,7 @@ where
             self.write_u16::<LittleEndian>(ext.valid_bits_per_sample)?;
             self.write_u32::<LittleEndian>(ext.channel_mask)?;
             let uuid = ext.type_guid.as_bytes();
-            self.write(uuid)?;
+            self.write_all(uuid)?;
         }
         Ok(())
     }

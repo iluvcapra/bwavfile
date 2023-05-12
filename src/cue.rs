@@ -70,7 +70,7 @@ impl RawLabel {
     fn write_to(&self) -> Vec<u8> {
         let mut writer = Cursor::new(vec![0u8; 0]);
         writer.write_u32::<LittleEndian>(self.cue_point_id).unwrap();
-        writer.write(&self.text).unwrap();
+        writer.write_all(&self.text).unwrap();
         writer.into_inner()
     }
 
@@ -99,7 +99,7 @@ impl RawNote {
     fn write_to(&self) -> Vec<u8> {
         let mut writer = Cursor::new(vec![0u8; 0]);
         writer.write_u32::<LittleEndian>(self.cue_point_id).unwrap();
-        writer.write(&self.text).unwrap();
+        writer.write_all(&self.text).unwrap();
         writer.into_inner()
     }
 
@@ -141,7 +141,7 @@ impl RawLtxt {
         writer.write_u16::<LittleEndian>(self.dialect).unwrap();
         writer.write_u16::<LittleEndian>(self.code_page).unwrap();
         if let Some(ext_text) = &self.text {
-            writer.write(ext_text).unwrap();
+            writer.write_all(ext_text).unwrap();
         }
         writer.into_inner()
     }
@@ -192,7 +192,7 @@ impl RawAdtlMember {
             };
             w.write_fourcc(fcc).unwrap();
             w.write_u32::<LittleEndian>(buf.len() as u32).unwrap();
-            w.write(&buf).unwrap();
+            w.write_all(&buf).unwrap();
             if buf.len() % 2 == 1 {
                 w.write_u8(0).unwrap();
             }
@@ -204,7 +204,7 @@ impl RawAdtlMember {
         writer
             .write_u32::<LittleEndian>(chunk_content.len() as u32)
             .unwrap();
-        writer.write(&chunk_content).unwrap();
+        writer.write_all(&chunk_content).unwrap();
         writer.into_inner()
     }
 

@@ -57,7 +57,7 @@ where
 
         self.write_integer_frames_to_buffer(buffer, &mut write_buffer);
 
-        self.inner.write(&write_buffer)?;
+        self.inner.write_all(&write_buffer)?;
         self.inner.flush()?;
         Ok(write_buffer.len() as u64 / self.inner.inner.format.channel_count as u64)
     }
@@ -299,7 +299,7 @@ where
         self.inner.write_fourcc(ident)?;
         assert!(data.len() < u32::MAX as usize);
         self.inner.write_u32::<LittleEndian>(data.len() as u32)?;
-        self.inner.write(data)?;
+        self.inner.write_all(data)?;
         if data.len() % 2 == 0 {
             self.increment_form_length(8 + data.len() as u64)?;
         } else {
@@ -353,7 +353,7 @@ where
         let to_add = framing - (lip % framing) - 16;
         let mut chunk = self.chunk(ELM1_SIG)?;
         let buf = vec![0u8; to_add as usize];
-        chunk.write(&buf)?;
+        chunk.write_all(&buf)?;
         let closed = chunk.end()?;
         let inner = closed.chunk(DATA_SIG)?;
         Ok(AudioFrameWriter::new(inner))
