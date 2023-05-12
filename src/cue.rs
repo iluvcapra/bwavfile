@@ -1,6 +1,7 @@
 #![allow(dead_code)]
-use super::fourcc::{FourCC,ReadFourCC, WriteFourCC, LABL_SIG, NOTE_SIG, 
-    ADTL_SIG, LTXT_SIG, DATA_SIG};
+use super::fourcc::{
+    FourCC, ReadFourCC, WriteFourCC, ADTL_SIG, DATA_SIG, LABL_SIG, LTXT_SIG, NOTE_SIG,
+};
 
 use super::list_form::collect_list_form;
 

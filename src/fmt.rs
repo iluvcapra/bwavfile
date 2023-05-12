@@ -261,28 +261,24 @@ impl WaveFmt {
         });
 
         let result: (u16, Option<WaveFmtExtended>) = match channel_bitmap {
-            ch if bits_per_sample != container_bits_per_sample => {
-                (
-                    0xFFFE,
-                    Some(WaveFmtExtended {
-                        valid_bits_per_sample: bits_per_sample,
-                        channel_mask: ch,
-                        type_guid: UUID_PCM,
-                    }),
-                )
-            }
+            ch if bits_per_sample != container_bits_per_sample => (
+                0xFFFE,
+                Some(WaveFmtExtended {
+                    valid_bits_per_sample: bits_per_sample,
+                    channel_mask: ch,
+                    type_guid: UUID_PCM,
+                }),
+            ),
             0b0100 => (0x0001, None),
             0b0011 => (0x0001, None),
-            ch => {
-                (
-                    0xFFFE,
-                    Some(WaveFmtExtended {
-                        valid_bits_per_sample: bits_per_sample,
-                        channel_mask: ch,
-                        type_guid: UUID_PCM,
-                    }),
-                )
-            }
+            ch => (
+                0xFFFE,
+                Some(WaveFmtExtended {
+                    valid_bits_per_sample: bits_per_sample,
+                    channel_mask: ch,
+                    type_guid: UUID_PCM,
+                }),
+            ),
         };
 
         let (tag, extformat) = result;
