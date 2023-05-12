@@ -57,7 +57,6 @@ where
         self.write_integer_frames_to_buffer(buffer, &mut write_buffer);
 
         self.inner.write_all(&write_buffer)?;
-        self.inner.flush()?;
         Ok(write_buffer.len() as u64 / self.inner.inner.format.channel_count as u64)
     }
 
