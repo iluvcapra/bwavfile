@@ -71,29 +71,32 @@ fn process_file(infile: &str, delim: &str, numeric_channel_names: bool) -> Resul
     let ouptut_format =
         WaveFmt::new_pcm_mono(input_format.sample_rate, input_format.bits_per_sample);
     let mut input_wave_reader = input_file.audio_frame_reader()?;
+    let mut output_wave_writers = channel_desc
+        .iter()
+        .enumerate()
+        .map(|(n, channel)| {
+            let suffix = name_suffix(numeric_channel_names, delim, n + 1, channel);
+            let outfile_name = output_dir
+                .join(format!("{}{}.wav", basename, suffix))
+                .into_os_string()
+                .into_string()
+                .unwrap();
 
-    for (n, channel) in channel_desc.iter().enumerate() {
-        let suffix = name_suffix(numeric_channel_names, delim, n + 1, channel);
-        let outfile_name = output_dir
-            .join(format!("{}{}.wav", basename, suffix))
-            .into_os_string()
-            .into_string()
-            .unwrap();
+            WaveWriter::create(&outfile_name, ouptut_format)
+                .expect("Failed to create new file")
+                .audio_frame_writer()
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
-        println!("Will create file {}", outfile_name);
-
-        let output_file =
-            WaveWriter::create(&outfile_name, ouptut_format).expect("Failed to create new file");
-
-        let mut output_wave_writer = output_file.audio_frame_writer()?;
-        let mut buffer = input_format.create_frame_buffer(1);
-
-        while input_wave_reader.read_integer_frame(&mut buffer)? > 0 {
-            output_wave_writer.write_integer_frames(&buffer[n..=n])?;
+    let mut buffer = input_format.create_frame_buffer(1);
+    while input_wave_reader.read_integer_frame(&mut buffer)? > 0 {
+        for (n, writer) in output_wave_writers.iter_mut().enumerate() {
+            writer.write_integer_frames(&buffer[n..=n])?;
         }
+    }
 
-        output_wave_writer.end()?;
-        input_wave_reader.locate(0)?;
+    for writer in output_wave_writers.drain(..) {
+        writer.end()?;
     }
 
     Ok(())
