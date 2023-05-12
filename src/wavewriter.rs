@@ -124,22 +124,20 @@ where
             self.inner
                 .inner
                 .write_u32::<LittleEndian>(self.length as u32)?;
-        } else {
-            if self.ident == DATA_SIG {
-                let data_chunk_64bit_field_offset = 8 + 4 + 8 + 8;
-                self.inner
-                    .inner
-                    .seek(SeekFrom::Start(self.content_start_pos - 4))?;
-                self.inner.inner.write_u32::<LittleEndian>(0xFFFF_FFFF)?;
-                // this only need to happen once, not every time we increment
+        } else if self.ident == DATA_SIG {
+            let data_chunk_64bit_field_offset = 8 + 4 + 8 + 8;
+            self.inner
+                .inner
+                .seek(SeekFrom::Start(self.content_start_pos - 4))?;
+            self.inner.inner.write_u32::<LittleEndian>(0xFFFF_FFFF)?;
+            // this only need to happen once, not every time we increment
 
-                self.inner
-                    .inner
-                    .seek(SeekFrom::Start(data_chunk_64bit_field_offset))?;
-                self.inner.inner.write_u64::<LittleEndian>(self.length)?;
-            } else {
-                todo!("FIXME RF64 wave writing is not yet supported for chunks other than `data`")
-            }
+            self.inner
+                .inner
+                .seek(SeekFrom::Start(data_chunk_64bit_field_offset))?;
+            self.inner.inner.write_u64::<LittleEndian>(self.length)?;
+        } else {
+            todo!("FIXME RF64 wave writing is not yet supported for chunks other than `data`")
         }
 
         Ok(())
