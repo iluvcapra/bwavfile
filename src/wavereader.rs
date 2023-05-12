@@ -4,7 +4,7 @@ use std::path::Path;
 
 use std::io::Cursor;
 use std::io::SeekFrom;
-use std::io::SeekFrom::{Current, Start};
+use std::io::SeekFrom::Start;
 use std::io::{BufReader, Read, Seek};
 
 use super::bext::Bext;
@@ -116,7 +116,7 @@ impl<R: Read + Seek> AudioFrameReader<R> {
 
         let framed_bits_per_sample = self.format.block_alignment * 8 / self.format.channel_count;
 
-        let tell = self.inner.seek(Current(0))?;
+        let tell = self.inner.stream_position()?;
 
         if (tell - self.start) < self.length {
             for n in 0..(self.format.channel_count as usize) {
@@ -145,7 +145,7 @@ impl<R: Read + Seek> AudioFrameReader<R> {
 
         let framed_bits_per_sample = self.format.block_alignment * 8 / self.format.channel_count;
 
-        let tell = self.inner.seek(Current(0))?;
+        let tell = self.inner.stream_position()?;
 
         if (tell - self.start) < self.length {
             for n in 0..(self.format.channel_count as usize) {
