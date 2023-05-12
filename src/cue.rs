@@ -186,9 +186,9 @@ impl RawAdtlMember {
         // It seems like all this casing could be done with traits
         for member in members.iter() {
             let (fcc, buf) = match member {
-                RawAdtlMember::Label(l) => ((LABL_SIG, l.write_to())),
-                RawAdtlMember::Note(n) => ((NOTE_SIG, n.write_to())),
-                RawAdtlMember::LabeledText(t) => ((LTXT_SIG, t.write_to())),
+                RawAdtlMember::Label(l) => (LABL_SIG, l.write_to()),
+                RawAdtlMember::Note(n) => (NOTE_SIG, n.write_to()),
+                RawAdtlMember::LabeledText(t) => (LTXT_SIG, t.write_to()),
                 RawAdtlMember::Unrecognized(f) => (*f, vec![0u8; 0]), // <-- this is a dopey case but here for completeness
             };
             w.write_fourcc(fcc).unwrap();

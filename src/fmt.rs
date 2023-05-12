@@ -457,10 +457,10 @@ impl<T> WriteWavAudioData for T
 where
     T: std::io::Write,
 {
-    fn write_i32_frames(&mut self, format: WaveFmt, _: &[i32]) -> Result<usize, std::io::Error> {
+    fn write_i32_frames(&mut self, _format: WaveFmt, _: &[i32]) -> Result<usize, std::io::Error> {
         todo!()
     }
-    fn write_f32_frames(&mut self, format: WaveFmt, _: &[f32]) -> Result<usize, std::io::Error> {
+    fn write_f32_frames(&mut self, _format: WaveFmt, _: &[f32]) -> Result<usize, std::io::Error> {
         todo!()
     }
 }
