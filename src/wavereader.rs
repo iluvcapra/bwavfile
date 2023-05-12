@@ -607,7 +607,7 @@ impl<R: Read + Seek> WaveReader<R> {
     /// Index of first LIST for with the given FORM fourcc
     fn get_list_form(&mut self, fourcc: FourCC) -> Result<Option<u32>, ParserError> {
         for (n, (start, _)) in self.get_chunks_extents(LIST_SIG)?.iter().enumerate() {
-            self.inner.seek(SeekFrom::Start(*start as u64))?;
+            self.inner.seek(SeekFrom::Start(*start))?;
             let this_fourcc = self.inner.read_fourcc()?;
             if this_fourcc == fourcc {
                 return Ok(Some(n as u32));

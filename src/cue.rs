@@ -69,9 +69,7 @@ struct RawLabel {
 impl RawLabel {
     fn write_to(&self) -> Vec<u8> {
         let mut writer = Cursor::new(vec![0u8; 0]);
-        writer
-            .write_u32::<LittleEndian>(self.cue_point_id as u32)
-            .unwrap();
+        writer.write_u32::<LittleEndian>(self.cue_point_id).unwrap();
         writer.write(&self.text).unwrap();
         writer.into_inner()
     }
@@ -83,7 +81,7 @@ impl RawLabel {
         Ok(Self {
             cue_point_id: rdr.read_u32::<LittleEndian>()?,
             text: {
-                let mut buf = vec![0u8; (length - 4) as usize];
+                let mut buf = vec![0u8; length - 4];
                 rdr.read_exact(&mut buf)?;
                 buf
             },
@@ -112,7 +110,7 @@ impl RawNote {
         Ok(Self {
             cue_point_id: rdr.read_u32::<LittleEndian>()?,
             text: {
-                let mut buf = vec![0u8; (length - 4) as usize];
+                let mut buf = vec![0u8; length - 4];
                 rdr.read_exact(&mut buf)?;
                 buf
             },
@@ -162,7 +160,7 @@ impl RawLtxt {
             code_page: rdr.read_u16::<LittleEndian>()?,
             text: {
                 if length - 20 > 0 {
-                    let mut buf = vec![0u8; (length - 20) as usize];
+                    let mut buf = vec![0u8; length - 20];
                     rdr.read_exact(&mut buf)?;
                     Some(buf)
                 } else {
@@ -292,11 +290,7 @@ pub struct Cue {
 }
 
 fn convert_to_cue_string(buffer: &[u8]) -> String {
-    let trimmed: Vec<u8> = buffer
-        .iter()
-        .take_while(|c| **c != 0 as u8)
-        .cloned()
-        .collect();
+    let trimmed: Vec<u8> = buffer.iter().take_while(|c| **c != 0_u8).cloned().collect();
     ASCII
         .decode(&trimmed, DecoderTrap::Ignore)
         .expect("Error decoding text")

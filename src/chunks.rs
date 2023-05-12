@@ -34,7 +34,7 @@ where
     T: Write,
 {
     fn write_wave_fmt(&mut self, format: &WaveFmt) -> Result<(), ParserError> {
-        self.write_u16::<LittleEndian>(format.tag as u16)?;
+        self.write_u16::<LittleEndian>(format.tag)?;
         self.write_u16::<LittleEndian>(format.channel_count)?;
         self.write_u32::<LittleEndian>(format.sample_rate)?;
         self.write_u32::<LittleEndian>(format.bytes_per_second)?;
@@ -143,11 +143,7 @@ where
     fn read_bext_string_field(&mut self, length: usize) -> Result<String, ParserError> {
         let mut buffer: Vec<u8> = vec![0; length];
         self.read(&mut buffer)?;
-        let trimmed: Vec<u8> = buffer
-            .iter()
-            .take_while(|c| **c != 0 as u8)
-            .cloned()
-            .collect();
+        let trimmed: Vec<u8> = buffer.iter().take_while(|c| **c != 0_u8).cloned().collect();
         Ok(ASCII
             .decode(&trimmed, DecoderTrap::Ignore)
             .expect("Error decoding text"))
