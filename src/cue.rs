@@ -344,9 +344,15 @@ impl Cue {
                 (Vec::<RawCue>::new(), Vec::<RawAdtlMember>::new()),
                 |(mut cues, mut adtls), (cue, label, note, ltxt)| {
                     cues.push(cue);
-                    label.map(|l| adtls.push(RawAdtlMember::Label(l)));
-                    note.map(|n| adtls.push(RawAdtlMember::Note(n)));
-                    ltxt.map(|m| adtls.push(RawAdtlMember::LabeledText(m)));
+                    if let Some(l) = label {
+                        adtls.push(RawAdtlMember::Label(l))
+                    }
+                    if let Some(n) = note {
+                        adtls.push(RawAdtlMember::Note(n))
+                    }
+                    if let Some(m) = ltxt {
+                        adtls.push(RawAdtlMember::LabeledText(m))
+                    }
                     (cues, adtls)
                 },
             )
