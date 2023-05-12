@@ -5,8 +5,6 @@ use std::{
     io,
 };
 
-use uuid;
-
 /// Errors returned by methods in this crate.
 #[derive(Debug)]
 pub enum Error {
