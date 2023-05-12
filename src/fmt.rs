@@ -1,4 +1,4 @@
-use crate::common_format::{CommonFormat, UUID_BFORMAT_PCM, UUID_PCM};
+use crate::common_format::{CommonFormat, WAVE_UUID_BFORMAT_PCM, WAVE_UUID_PCM};
 use crate::Sample;
 
 use std::io::Cursor;
@@ -240,7 +240,7 @@ impl WaveFmt {
             extended_format: Some(WaveFmtExtended {
                 valid_bits_per_sample: bits_per_sample,
                 channel_mask: ChannelMask::DirectOut as u32,
-                type_guid: UUID_BFORMAT_PCM,
+                type_guid: WAVE_UUID_BFORMAT_PCM,
             }),
         }
     }
@@ -268,7 +268,7 @@ impl WaveFmt {
                 Some(WaveFmtExtended {
                     valid_bits_per_sample: bits_per_sample,
                     channel_mask: ch,
-                    type_guid: UUID_PCM,
+                    type_guid: WAVE_UUID_PCM,
                 }),
             ),
             0b0100 => (0x0001, None),
@@ -278,7 +278,7 @@ impl WaveFmt {
                 Some(WaveFmtExtended {
                     valid_bits_per_sample: bits_per_sample,
                     channel_mask: ch,
-                    type_guid: UUID_PCM,
+                    type_guid: WAVE_UUID_PCM,
                 }),
             ),
         };
