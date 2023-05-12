@@ -249,7 +249,7 @@ impl WaveWriter<BufWriter<File>> {
     pub fn create<P: AsRef<Path>>(path: P, format: WaveFmt) -> Result<Self, Error> {
         let f = File::create(path)?;
         let b = BufWriter::new(f);
-        Ok(Self::new(b, format)?)
+        Self::new(b, format)
     }
 }
 
@@ -257,7 +257,7 @@ impl WaveWriter<File> {
     /// Creare a new Wave file with unbuffered IO at `path`
     pub fn create_unbuffered<P: AsRef<Path>>(path: P, format: WaveFmt) -> Result<Self, Error> {
         let f = File::create(path)?;
-        Ok(Self::new(f, format)?)
+        Self::new(f, format)
     }
 }
 

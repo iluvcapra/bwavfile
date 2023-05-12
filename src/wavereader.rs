@@ -216,7 +216,7 @@ impl WaveReader<BufReader<File>> {
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, ParserError> {
         let f = File::open(path)?;
         let inner = BufReader::new(f);
-        Ok(Self::new(inner)?)
+        Self::new(inner)
     }
 }
 
@@ -224,10 +224,9 @@ impl WaveReader<File> {
     /// Open a file for reading with unbuffered IO.
     ///
     /// A convenience that opens `path` and calls `Self::new()`
-
     pub fn open_unbuffered<P: AsRef<Path>>(path: P) -> Result<Self, ParserError> {
         let inner = File::open(path)?;
-        return Ok(Self::new(inner)?);
+        Self::new(inner)
     }
 }
 
@@ -279,12 +278,12 @@ impl<R: Read + Seek> WaveReader<R> {
     pub fn audio_frame_reader(mut self) -> Result<AudioFrameReader<R>, ParserError> {
         let format = self.format()?;
         let audio_chunk_reader = self.get_chunk_extent_at_index(DATA_SIG, 0)?;
-        Ok(AudioFrameReader::new(
+        AudioFrameReader::new(
             self.inner,
             format,
             audio_chunk_reader.0,
             audio_chunk_reader.1,
-        )?)
+        )
     }
 
     /// The count of audio frames in the file.
