@@ -269,7 +269,7 @@ impl<R: Read + Seek> WaveReader<R> {
 
     /// Unwrap the inner reader.
     pub fn into_inner(self) -> R {
-        return self.inner;
+        self.inner
     }
 
     ///

@@ -71,11 +71,11 @@ impl<R: Read + Seek> Parser<R> {
         let newmap: HashMap<FourCC, u64> = HashMap::new();
         let mut the_stream = stream;
         the_stream.seek(Start(0))?;
-        return Ok(Parser {
+        Ok(Parser {
             stream: the_stream,
             state: State::New,
             ds64state: newmap,
-        });
+        })
     }
 
     // pub fn into_inner(self) -> R {
@@ -131,7 +131,7 @@ impl<R: Read + Seek> Iterator for Parser<R> {
     fn next(&mut self) -> Option<Event> {
         let (event, next_state) = self.advance();
         self.state = next_state;
-        return event;
+        event
     }
 }
 
@@ -171,7 +171,7 @@ impl<R: Read + Seek> Parser<R> {
             }
         }
 
-        return Ok((event, next_state));
+        Ok((event, next_state))
     }
 
     fn parse_ds64(&mut self) -> Result<(Event, State), Error> {
@@ -182,7 +182,7 @@ impl<R: Read + Seek> Parser<R> {
         let mut read: u64 = 0;
 
         if ds64_sig != DS64_SIG {
-            return Err(Error::MissingRequiredDS64);
+            Err(Error::MissingRequiredDS64)
         } else {
             let long_file_size = self.stream.read_u64::<LittleEndian>()?;
             let long_data_size = self.stream.read_u64::<LittleEndian>()?;
@@ -221,7 +221,7 @@ impl<R: Read + Seek> Parser<R> {
                 remaining: long_file_size - (4 + 8 + ds64_size),
             };
 
-            return Ok((event, state));
+            Ok((event, state))
         }
     }
 
@@ -262,48 +262,38 @@ impl<R: Read + Seek> Parser<R> {
             }
         }
 
-        return Ok((event, state));
+        Ok((event, state))
     }
 
     fn handle_state(&mut self) -> Result<(Option<Event>, State), Error> {
         match self.state {
-            State::New => {
-                return Ok((Some(Event::StartParse), State::ReadyForHeader));
-            }
+            State::New => Ok((Some(Event::StartParse), State::ReadyForHeader)),
             State::ReadyForHeader => {
                 let (event, state) = self.parse_header()?;
-                return Ok((Some(event), state));
+                Ok((Some(event), state))
             }
             State::ReadyForDS64 => {
                 let (event, state) = self.parse_ds64()?;
-                return Ok((Some(event), state));
+                Ok((Some(event), state))
             }
             State::ReadyForChunk { at, remaining } => {
                 let (event, state) = self.enter_chunk(at, remaining)?;
-                return Ok((Some(event), state));
+                Ok((Some(event), state))
             }
-            State::Error => {
-                return Ok((Some(Event::FinishParse), State::Complete));
-            }
-            State::Complete => {
-                return Ok((None, State::Complete));
-            }
+            State::Error => Ok((Some(Event::FinishParse), State::Complete)),
+            State::Complete => Ok((None, State::Complete)),
         }
     }
 
     fn advance(&mut self) -> (Option<Event>, State) {
         match self.handle_state() {
-            Ok((event, state)) => {
-                return (event, state);
-            }
-            Err(error) => {
-                return (
-                    Some(Event::Failed {
-                        error: error.into(),
-                    }),
-                    State::Error,
-                );
-            }
+            Ok((event, state)) => (event, state),
+            Err(error) => (
+                Some(Event::Failed {
+                    error: error.into(),
+                }),
+                State::Error,
+            ),
         }
     }
 }
