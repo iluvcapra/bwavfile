@@ -21,11 +21,7 @@ pub trait ReadBWaveChunks: Read {
 
 pub trait WriteBWaveChunks: Write {
     fn write_wave_fmt(&mut self, format: &WaveFmt) -> Result<(), ParserError>;
-    fn write_bext_string_field(
-        &mut self,
-        string: &String,
-        length: usize,
-    ) -> Result<(), ParserError>;
+    fn write_bext_string_field(&mut self, string: &str, length: usize) -> Result<(), ParserError>;
     fn write_bext(&mut self, bext: &Bext) -> Result<(), ParserError>;
 }
 
@@ -51,13 +47,9 @@ where
         Ok(())
     }
 
-    fn write_bext_string_field(
-        &mut self,
-        string: &String,
-        length: usize,
-    ) -> Result<(), ParserError> {
+    fn write_bext_string_field(&mut self, string: &str, length: usize) -> Result<(), ParserError> {
         let mut buf = ASCII
-            .encode(&string, EncoderTrap::Ignore)
+            .encode(string, EncoderTrap::Ignore)
             .expect("Error encoding text");
         buf.truncate(length);
         let filler_length = length - buf.len();
