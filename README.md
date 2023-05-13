@@ -1,7 +1,7 @@
 [![Crates.io](https://img.shields.io/crates/l/bwavfile)](LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/bwavfile)](https://crates.io/crates/bwavfile/)
 ![GitHub last commit](https://img.shields.io/github/last-commit/iluvcapra/bwavfile)
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/iluvcapra/bwavfile/Rust)](https://github.com/iluvcapra/bwavfile/actions?query=workflow%3ARust)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/iluvcapra/bwavfile/rust.yml?branch=main)](https://github.com/iluvcapra/bwavfile/actions?query=workflow%3ARust)
 
 # bwavfile
 Wave File Reader/Writer library in Rust, with Broadcast-WAV, MBWF and RF64 Support
