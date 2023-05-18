@@ -560,7 +560,7 @@ impl<R: Read + Seek> WaveReader<R> {
 impl<R: Read + Seek> WaveReader<R> {
     // Private implementation
     //
-    // As time passes thi get smore obnoxious because I haven't implemented recursive chunk
+    // As time passes this get smore obnoxious because I haven't implemented recursive chunk
     // parsing in the raw parser and I'm working around it
 
     // fn chunk_reader(&mut self, signature: FourCC, at_index: u32) -> Result<RawChunkReader<R>, ParserError> {
