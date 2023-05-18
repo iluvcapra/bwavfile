@@ -4,12 +4,12 @@
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/iluvcapra/bwavfile/rust.yml?branch=master)](https://github.com/iluvcapra/bwavfile/actions?query=workflow%3ARust)
 
 # bwavfile
-Wave File Reader/Writer library in Rust, with Broadcast-WAV, MBWF and RF64 Support
+Wave File Reader/Writer library in Rust, with Broadcast-WAV, RF64 and production metadata support
 
 ## Features
 
 __bwavfile__ provides a reader `WaveReader` and writer type `WaveWriter` for 
-reading and creating new audio files respectively.
+reading and creating new wave audio files.
 
 `WaveReader` and `WaveWriter` support:
   * A unified interface for standard RIFF and RF64/BW64 64-bit Wave files.
@@ -19,6 +19,8 @@ reading and creating new audio files respectively.
     formats.
   * A unified interface for standard `WaveFormat` and extended `WaveFormatEx`
     wave data format specification.
+
+Extensive metadata support is also provided:
   * Multichannel, surround, and ambisonic audio data description including 
     surround channel maps, ADM `AudioTrackFormat`, `AudioChannelFormatRef` and 
     `AudioPackRef` data structures.
