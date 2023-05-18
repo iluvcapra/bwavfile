@@ -11,13 +11,32 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
 #     - name: Install ffmpeg
 #       run: sudo apt-get install ffmpeg
+    - name: clippy-check
+      # You may pin to the exact commit or the version.
+      # uses: LoliGothick/clippy-check@9cd01de4387f9c644b6489355bcff686da6a00f2
+      uses: LoliGothick/clippy-check@v0.2.11
+      with:
+        # GitHub token
+        token: ${{ secrets.GITHUB_TOKEN }}
+        # Arguments for the `cargo clippy` command
+        # options: # optional
+        # Sequence of lint warnings (without `clippy::` prefix)
+#         warn: # optional
+#         # Sequence of lint allowed (without `clippy::` prefix)
+#         allow: # optional
+#         # Sequence of lint denied (without `clippy::` prefix)
+#         deny: # optional
+#         # Sequence of lint forbidden (without `clippy::` prefix)
+#         forbid: # optional
+#         # Display name of the created GitHub check. Must be unique across several LoliGothick/clippy-check invocations.
+#         name: # optional, default is clippy
+#         # working directory where to execute `cargo clippy`.
+#         working-directory: # optional, default is .
     - name: Create Test Media
       run: cd tests; sh create_test_media.sh
     - name: Build
