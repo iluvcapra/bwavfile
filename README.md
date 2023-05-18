@@ -6,6 +6,7 @@
 # bwavfile
 Wave File Reader/Writer library in Rust, with Broadcast-WAV, RF64 and production metadata support
 
+
 ## Features
 
 __bwavfile__ provides a reader `WaveReader` and writer type `WaveWriter` for 
@@ -20,16 +21,18 @@ reading and creating new wave audio files.
   * A unified interface for standard `WaveFormat` and extended `WaveFormatEx`
     wave data format specification.
 
-Extensive metadata support is also provided:
-  * Multichannel, surround, and ambisonic audio data description including 
-    surround channel maps, ADM `AudioTrackFormat`, `AudioChannelFormatRef` and 
-    `AudioPackRef` data structures.
+The library has extensive metadata support, with emphasis on film and video 
+production metadata:
   * Broadcast-Wave metdata extension, including long description, originator 
     information, SMPTE UMID and coding history.
   * Reading and writing of embedded iXML and axml/ADM metadata.
   * Reading and writing of timed cues and and timed cue regions.
+  * Multichannel, surround, and ambisonic audio data description including 
+    surround channel maps, ADM `AudioTrackFormat`, `AudioChannelFormatRef` and 
+    `AudioPackRef` data structures.
 
-### Feature Roadmap
+
+## Feature Roadmap
 
 Some features that may be included in the future include:
   * Broadcast-Wave `levl` waveform overview data reading and writing.
