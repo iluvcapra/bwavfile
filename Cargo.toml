@@ -1,7 +1,7 @@
 [package]
 name = "bwavfile"
 version = "1.1.0"
-authors = ["Jamie Hardt <jamiehardt@me.com>"]
+authors = ["Jamie Hardt <jamiehardt@me.com>", "Ian Hobson <ian.r.hobson@gmail.com>"]
 edition = "2018"
 license = "MIT"
 description = "Rust Wave File Reader/Writer with Broadcast-WAV, MBWF and RF64 Support"
