@@ -13,20 +13,20 @@ pub type Decibels = f32;
 ///  a `bext` metadata record.
 ///
 /// ## Resources
-/// - [EBU Tech 3285](https://tech.ebu.ch/docs/tech/tech3285.pdf).
+/// - [EBU Tech 3285](https://tech.ebu.ch/docs/tech/tech3285.pdf) "Specification of the Broadcast Wave Format (BWF)"
 /// - [EBU Tech R098](https://tech.ebu.ch/docs/r/r098.pdf) (1999) "Format for the &lt;CodingHistory&gt; field in Broadcast Wave Format files, BWF"
 /// - [EBU Tech R099](https://tech.ebu.ch/docs/r/r099.pdf) (October 2011) "‘Unique’ Source Identifier (USID) for use in the
 ///   &lt;OriginatorReference&gt; field of the Broadcast Wave Format"
 
 #[derive(Debug)]
 pub struct Bext {
-    /// 256 ASCII character field with free text.
+    /// 0..256 ASCII character field with free text.
     pub description: String,
 
-    /// Originating application.
+    /// 0..32 ASCII character Originating application.
     pub originator: String,
 
-    /// Application-specific UID.
+    /// 0..32 ASCII character application-specific UID or EBU R099-formatted UID.
     pub originator_reference: String,
 
     /// Creation date in format `YYYY-MM-DD`.
@@ -35,7 +35,7 @@ pub struct Bext {
     /// Creation time in format `HH:MM:SS`.
     pub origination_time: String,
 
-    /// Time of the start of this wave file, expressed as the number of samples
+    /// Start timestamp of this wave file, in number of samples
     /// since local midnight.
     pub time_reference: u64,
 
