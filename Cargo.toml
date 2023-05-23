@@ -1,6 +1,6 @@
 [package]
 name = "bwavfile"
-version = "1.1.0"
+version = "2.0.0"
 authors = ["Jamie Hardt <jamiehardt@me.com>", "Ian Hobson <ian.r.hobson@gmail.com>"]
 edition = "2018"
 license = "MIT"
