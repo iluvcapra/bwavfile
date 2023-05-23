@@ -21,11 +21,7 @@ pub trait ReadBWaveChunks: Read {
 
 pub trait WriteBWaveChunks: Write {
     fn write_wave_fmt(&mut self, format: &WaveFmt) -> Result<(), ParserError>;
-    fn write_bext_string_field(
-        &mut self,
-        string: &String,
-        length: usize,
-    ) -> Result<(), ParserError>;
+    fn write_bext_string_field(&mut self, string: &str, length: usize) -> Result<(), ParserError>;
     fn write_bext(&mut self, bext: &Bext) -> Result<(), ParserError>;
 }
 
@@ -34,7 +30,7 @@ where
     T: Write,
 {
     fn write_wave_fmt(&mut self, format: &WaveFmt) -> Result<(), ParserError> {
-        self.write_u16::<LittleEndian>(format.tag as u16)?;
+        self.write_u16::<LittleEndian>(format.tag)?;
         self.write_u16::<LittleEndian>(format.channel_count)?;
         self.write_u32::<LittleEndian>(format.sample_rate)?;
         self.write_u32::<LittleEndian>(format.bytes_per_second)?;
@@ -46,18 +42,14 @@ where
             self.write_u16::<LittleEndian>(ext.valid_bits_per_sample)?;
             self.write_u32::<LittleEndian>(ext.channel_mask)?;
             let uuid = ext.type_guid.as_bytes();
-            self.write(uuid)?;
+            self.write_all(uuid)?;
         }
         Ok(())
     }
 
-    fn write_bext_string_field(
-        &mut self,
-        string: &String,
-        length: usize,
-    ) -> Result<(), ParserError> {
+    fn write_bext_string_field(&mut self, string: &str, length: usize) -> Result<(), ParserError> {
         let mut buf = ASCII
-            .encode(&string, EncoderTrap::Ignore)
+            .encode(string, EncoderTrap::Ignore)
             .expect("Error encoding text");
         buf.truncate(length);
         let filler_length = length - buf.len();
@@ -142,12 +134,8 @@ where
 
     fn read_bext_string_field(&mut self, length: usize) -> Result<String, ParserError> {
         let mut buffer: Vec<u8> = vec![0; length];
-        self.read(&mut buffer)?;
-        let trimmed: Vec<u8> = buffer
-            .iter()
-            .take_while(|c| **c != 0 as u8)
-            .cloned()
-            .collect();
+        self.read_exact(&mut buffer)?;
+        let trimmed: Vec<u8> = buffer.iter().take_while(|c| **c != 0_u8).cloned().collect();
         Ok(ASCII
             .decode(&trimmed, DecoderTrap::Ignore)
             .expect("Error decoding text"))
@@ -168,7 +156,7 @@ where
             },
             umid: {
                 let mut buf = [0u8; 64];
-                self.read(&mut buf)?;
+                self.read_exact(&mut buf)?;
                 if version > 0 {
                     Some(buf)
                 } else {

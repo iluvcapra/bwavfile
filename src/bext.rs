@@ -1,4 +1,5 @@
 pub type LU = f32;
+#[allow(clippy::upper_case_acronyms)]
 pub type LUFS = f32;
 pub type Decibels = f32;
 

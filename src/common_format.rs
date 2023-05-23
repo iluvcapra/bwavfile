@@ -1,9 +1,9 @@
 use uuid::Uuid;
 
-const BASIC_PCM: u16 = 0x0001;
-const BASIC_FLOAT: u16 = 0x0003;
-const BASIC_MPEG: u16 = 0x0050;
-const BASIC_EXTENDED: u16 = 0xFFFE;
+pub const WAVE_TAG_PCM: u16 = 0x0001;
+pub const WAVE_TAG_FLOAT: u16 = 0x0003;
+pub const WAVE_TAG_MPEG: u16 = 0x0050;
+pub const WAVE_TAG_EXTENDED: u16 = 0xFFFE;
 
 /* RC 2361 §4:
 
@@ -15,23 +15,23 @@ const BASIC_EXTENDED: u16 = 0xFFFE;
 
 */
 
-pub const UUID_PCM: Uuid = Uuid::from_bytes([
+pub const WAVE_UUID_PCM: Uuid = Uuid::from_bytes([
     0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71,
 ]);
 
-pub const UUID_FLOAT: Uuid = Uuid::from_bytes([
+pub const WAVE_UUID_FLOAT: Uuid = Uuid::from_bytes([
     0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71,
 ]);
 
-pub const UUID_MPEG: Uuid = Uuid::from_bytes([
+pub const WAVE_UUID_MPEG: Uuid = Uuid::from_bytes([
     0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71,
 ]);
 
-pub const UUID_BFORMAT_PCM: Uuid = Uuid::from_bytes([
+pub const WAVE_UUID_BFORMAT_PCM: Uuid = Uuid::from_bytes([
     0x01, 0x00, 0x00, 0x00, 0x21, 0x07, 0xd3, 0x11, 0x86, 0x44, 0xc8, 0xc1, 0xca, 0x00, 0x00, 0x00,
 ]);
 
-pub const UUID_BFORMAT_FLOAT: Uuid = Uuid::from_bytes([
+pub const WAVE_UUID_BFORMAT_FLOAT: Uuid = Uuid::from_bytes([
     0x03, 0x00, 0x00, 0x00, 0x21, 0x07, 0xd3, 0x11, 0x86, 0x44, 0xc8, 0xc1, 0xca, 0x00, 0x00, 0x00,
 ]);
 
@@ -71,14 +71,14 @@ impl CommonFormat {
     /// Resolve a tag and Uuid to a `CommonFormat`.
     pub fn make(basic: u16, uuid: Option<Uuid>) -> Self {
         match (basic, uuid) {
-            (BASIC_PCM, _) => Self::IntegerPCM,
-            (BASIC_FLOAT, _) => Self::IeeeFloatPCM,
-            (BASIC_MPEG, _) => Self::Mpeg,
-            (BASIC_EXTENDED, Some(UUID_PCM)) => Self::IntegerPCM,
-            (BASIC_EXTENDED, Some(UUID_FLOAT)) => Self::IeeeFloatPCM,
-            (BASIC_EXTENDED, Some(UUID_BFORMAT_PCM)) => Self::AmbisonicBFormatIntegerPCM,
-            (BASIC_EXTENDED, Some(UUID_BFORMAT_FLOAT)) => Self::AmbisonicBFormatIeeeFloatPCM,
-            (BASIC_EXTENDED, Some(x)) => CommonFormat::UnknownExtended(x),
+            (WAVE_TAG_PCM, _) => Self::IntegerPCM,
+            (WAVE_TAG_FLOAT, _) => Self::IeeeFloatPCM,
+            (WAVE_TAG_MPEG, _) => Self::Mpeg,
+            (WAVE_TAG_EXTENDED, Some(WAVE_UUID_PCM)) => Self::IntegerPCM,
+            (WAVE_TAG_EXTENDED, Some(WAVE_UUID_FLOAT)) => Self::IeeeFloatPCM,
+            (WAVE_TAG_EXTENDED, Some(WAVE_UUID_BFORMAT_PCM)) => Self::AmbisonicBFormatIntegerPCM,
+            (WAVE_TAG_EXTENDED, Some(WAVE_UUID_BFORMAT_FLOAT)) => Self::AmbisonicBFormatIeeeFloatPCM,
+            (WAVE_TAG_EXTENDED, Some(x)) => CommonFormat::UnknownExtended(x),
             (x, _) => CommonFormat::UnknownBasic(x),
         }
     }
@@ -89,13 +89,13 @@ impl CommonFormat {
     /// returned tag will be 0xFFFE and the `Uuid` will describe the format.
     pub fn take(self) -> (u16, Uuid) {
         match self {
-            Self::IntegerPCM => (BASIC_PCM, UUID_PCM),
-            Self::IeeeFloatPCM => (BASIC_FLOAT, UUID_FLOAT),
-            Self::Mpeg => (BASIC_MPEG, UUID_MPEG),
-            Self::AmbisonicBFormatIntegerPCM => (BASIC_EXTENDED, UUID_BFORMAT_PCM),
-            Self::AmbisonicBFormatIeeeFloatPCM => (BASIC_EXTENDED, UUID_BFORMAT_FLOAT),
+            Self::IntegerPCM => (WAVE_TAG_PCM, WAVE_UUID_PCM),
+            Self::IeeeFloatPCM => (WAVE_TAG_FLOAT, WAVE_UUID_FLOAT),
+            Self::Mpeg => (WAVE_TAG_MPEG, WAVE_UUID_MPEG),
+            Self::AmbisonicBFormatIntegerPCM => (WAVE_TAG_EXTENDED, WAVE_UUID_BFORMAT_PCM),
+            Self::AmbisonicBFormatIeeeFloatPCM => (WAVE_TAG_EXTENDED, WAVE_UUID_BFORMAT_FLOAT),
             Self::UnknownBasic(x) => (x, uuid_from_basic_tag(x)),
-            Self::UnknownExtended(x) => (BASIC_EXTENDED, x),
+            Self::UnknownExtended(x) => (WAVE_TAG_EXTENDED, x),
         }
     }
 }

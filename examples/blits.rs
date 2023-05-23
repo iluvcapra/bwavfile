@@ -208,7 +208,7 @@ fn create_blits_file(file_name: &str, sample_rate: u32, bits_per_sample: u16) ->
     let mut fw = file.audio_frame_writer()?;
     for frame in frames {
         let buf = vec![frame.0, frame.1, frame.2, frame.3, frame.4, frame.5];
-        fw.write_integer_frames(&buf)?;
+        fw.write_frames(&buf)?;
     }
     fw.end()?;
 

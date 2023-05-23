@@ -1,9 +1,11 @@
-use super::common_format::{CommonFormat, UUID_BFORMAT_PCM, UUID_PCM};
+use crate::common_format::{CommonFormat, WAVE_UUID_BFORMAT_PCM, WAVE_UUID_PCM};
+use crate::Sample;
+
 use std::io::Cursor;
 use uuid::Uuid;
 
 use byteorder::LittleEndian;
-use byteorder::{ReadBytesExt, WriteBytesExt};
+use byteorder::ReadBytesExt;
 
 // Need more test cases for ADMAudioID
 #[allow(dead_code)]
@@ -105,7 +107,7 @@ impl ChannelMask {
             (0..18)
                 .map(|i| 1 << i)
                 .filter(|mask| mask & input_mask > 0)
-                .map(|mask| Into::<ChannelMask>::into(mask))
+                .map(ChannelMask::from)
                 .collect()
         }
     }
@@ -238,7 +240,7 @@ impl WaveFmt {
             extended_format: Some(WaveFmtExtended {
                 valid_bits_per_sample: bits_per_sample,
                 channel_mask: ChannelMask::DirectOut as u32,
-                type_guid: UUID_BFORMAT_PCM,
+                type_guid: WAVE_UUID_BFORMAT_PCM,
             }),
         }
     }
@@ -261,28 +263,24 @@ impl WaveFmt {
         });
 
         let result: (u16, Option<WaveFmtExtended>) = match channel_bitmap {
-            ch if bits_per_sample != container_bits_per_sample => {
-                (
-                    0xFFFE,
-                    Some(WaveFmtExtended {
-                        valid_bits_per_sample: bits_per_sample,
-                        channel_mask: ch,
-                        type_guid: UUID_PCM,
-                    }),
-                )
-            }
+            ch if bits_per_sample != container_bits_per_sample => (
+                0xFFFE,
+                Some(WaveFmtExtended {
+                    valid_bits_per_sample: bits_per_sample,
+                    channel_mask: ch,
+                    type_guid: WAVE_UUID_PCM,
+                }),
+            ),
             0b0100 => (0x0001, None),
             0b0011 => (0x0001, None),
-            ch => {
-                (
-                    0xFFFE,
-                    Some(WaveFmtExtended {
-                        valid_bits_per_sample: bits_per_sample,
-                        channel_mask: ch,
-                        type_guid: UUID_PCM,
-                    }),
-                )
-            }
+            ch => (
+                0xFFFE,
+                Some(WaveFmtExtended {
+                    valid_bits_per_sample: bits_per_sample,
+                    channel_mask: ch,
+                    type_guid: WAVE_UUID_PCM,
+                }),
+            ),
         };
 
         let (tag, extformat) = result;
@@ -313,8 +311,8 @@ impl WaveFmt {
     ///
     /// This is a conveneince method that creates a `Vec<i32>` with
     /// as many elements as there are channels in the underlying stream.
-    pub fn create_frame_buffer(&self, length: usize) -> Vec<i32> {
-        vec![0i32; self.channel_count as usize * length]
+    pub fn create_frame_buffer<S: Sample>(&self, length: usize) -> Vec<S> {
+        vec![S::EQUILIBRIUM; self.channel_count as usize * length]
     }
 
     /// Create a raw byte buffer to hold `length` blocks from a reader or
@@ -323,33 +321,11 @@ impl WaveFmt {
         vec![0u8; self.block_alignment as usize * length]
     }
 
-    /// Write frames into a byte vector
-    pub fn pack_frames(&self, from_frames: &[i32], into_bytes: &mut [u8]) -> () {
-        let mut write_cursor = Cursor::new(into_bytes);
-
-        assert!(
-            from_frames.len() % self.channel_count as usize == 0,
-            "frames buffer does not contain a number of samples % channel_count == 0"
-        );
-
-        for n in 0..from_frames.len() {
-            match (self.valid_bits_per_sample(), self.bits_per_sample) {
-                    (0..=8,8) => write_cursor.write_u8((from_frames[n] + 0x80) as u8 ).unwrap(), // EBU 3285 §A2.2
-                    (9..=16,16) => write_cursor.write_i16::<LittleEndian>(from_frames[n] as i16).unwrap(),
-                    (10..=24,24) => write_cursor.write_i24::<LittleEndian>(from_frames[n]).unwrap(),
-                    (25..=32,32) => write_cursor.write_i32::<LittleEndian>(from_frames[n]).unwrap(),
-                    (b,_)=> panic!("Unrecognized integer format, bits per sample {}, channels {}, block_alignment {}", 
-                        b, self.channel_count, self.block_alignment)
-                }
-        }
-        ()
-    }
-
     /// Read bytes into frames
-    pub fn unpack_frames(&self, from_bytes: &[u8], into_frames: &mut [i32]) -> () {
+    pub fn unpack_frames(&self, from_bytes: &[u8], into_frames: &mut [i32]) {
         let mut rdr = Cursor::new(from_bytes);
-        for n in 0..(into_frames.len()) {
-            into_frames[n] = match (self.valid_bits_per_sample(), self.bits_per_sample) {
+        for frame in into_frames {
+            *frame = match (self.valid_bits_per_sample(), self.bits_per_sample) {
                 (0..=8,8) => rdr.read_u8().unwrap() as i32 - 0x80_i32, // EBU 3285 §A2.2
                 (9..=16,16) => rdr.read_i16::<LittleEndian>().unwrap() as i32,
                 (10..=24,24) => rdr.read_i24::<LittleEndian>().unwrap(),
@@ -425,8 +401,8 @@ where
     ) -> Result<usize, std::io::Error> {
         assert!(into.len() % format.channel_count as usize == 0);
 
-        for n in 0..(into.len()) {
-            into[n] = match (format.valid_bits_per_sample(), format.bits_per_sample) {
+        for frame in into {
+            *frame = match (format.valid_bits_per_sample(), format.bits_per_sample) {
                 (0..=8,8) => self.read_u8().unwrap() as i32 - 0x80_i32, // EBU 3285 §A2.2
                 (9..=16,16) => self.read_i16::<LittleEndian>().unwrap() as i32,
                 (10..=24,24) => self.read_i24::<LittleEndian>().unwrap(),
@@ -457,10 +433,10 @@ impl<T> WriteWavAudioData for T
 where
     T: std::io::Write,
 {
-    fn write_i32_frames(&mut self, format: WaveFmt, _: &[i32]) -> Result<usize, std::io::Error> {
+    fn write_i32_frames(&mut self, _format: WaveFmt, _: &[i32]) -> Result<usize, std::io::Error> {
         todo!()
     }
-    fn write_f32_frames(&mut self, format: WaveFmt, _: &[f32]) -> Result<usize, std::io::Error> {
+    fn write_f32_frames(&mut self, _format: WaveFmt, _: &[f32]) -> Result<usize, std::io::Error> {
         todo!()
     }
 }
