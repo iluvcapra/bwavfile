@@ -3,6 +3,7 @@ extern crate bwavfile;
 use bwavfile::ChannelMask;
 use bwavfile::Error;
 use bwavfile::WaveReader;
+use bwavfile::I24;
 
 #[test]
 fn test_open() {
@@ -80,16 +81,16 @@ fn test_read() {
     let path = "tests/media/audacity_16bit.wav";
 
     let mut w = WaveReader::open(path).expect("Failure opening test file");
-    let mut buffer = w.format().unwrap().create_frame_buffer(1);
+    let mut buffer = w.format().unwrap().create_frame_buffer::<i16>(1);
 
     let mut reader = w.audio_frame_reader().unwrap();
 
-    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
-    assert_eq!(buffer[0], -2823_i32);
-    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
-    assert_eq!(buffer[0], 2012_i32);
-    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
-    assert_eq!(buffer[0], 4524_i32);
+    assert_eq!(reader.read_frames(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], -2823_i16);
+    assert_eq!(reader.read_frames(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], 2012_i16);
+    assert_eq!(reader.read_frames(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], 4524_i16);
 }
 
 #[test]
@@ -97,21 +98,21 @@ fn test_locate_multichannel_read() {
     let path = "tests/media/ff_pink.wav";
 
     let mut w = WaveReader::open(path).expect("Failure opening test file");
-    let mut buffer = w.format().unwrap().create_frame_buffer(1);
+    let mut buffer = w.format().unwrap().create_frame_buffer::<I24>(1);
 
     let mut reader = w.audio_frame_reader().unwrap();
 
-    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
-    assert_eq!(buffer[0], 332702_i32);
-    assert_eq!(buffer[1], 3258791_i32);
-    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
-    assert_eq!(buffer[0], -258742_i32); // 0x800000 = 8388608 // 8129866 - 8388608
-    assert_eq!(buffer[1], 0x0D7EF9_i32);
+    assert_eq!(reader.read_frames(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], I24::from(332702));
+    assert_eq!(buffer[1], I24::from(3258791));
+    assert_eq!(reader.read_frames(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], I24::from(-258742)); // 0x800000 = 8388608 // 8129866 - 8388608
+    assert_eq!(buffer[1], I24::from(0x0D7EF9));
 
     assert_eq!(reader.locate(100).unwrap(), 100);
-    assert_eq!(reader.read_integer_frame(&mut buffer).unwrap(), 1);
-    assert_eq!(buffer[0], 0x109422_i32);
-    assert_eq!(buffer[1], -698901_i32); // 7689707 - 8388608
+    assert_eq!(reader.read_frames(&mut buffer).unwrap(), 1);
+    assert_eq!(buffer[0], I24::from(0x109422));
+    assert_eq!(buffer[1], I24::from(-698901)); // 7689707 - 8388608
 }
 
 #[test]

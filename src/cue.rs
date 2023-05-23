@@ -1,6 +1,7 @@
 #![allow(dead_code)]
-use super::fourcc::{FourCC,ReadFourCC, WriteFourCC, LABL_SIG, NOTE_SIG, 
-    ADTL_SIG, LTXT_SIG, DATA_SIG};
+use super::fourcc::{
+    FourCC, ReadFourCC, WriteFourCC, ADTL_SIG, DATA_SIG, LABL_SIG, LTXT_SIG, NOTE_SIG,
+};
 
 use super::list_form::collect_list_form;
 
@@ -68,10 +69,8 @@ struct RawLabel {
 impl RawLabel {
     fn write_to(&self) -> Vec<u8> {
         let mut writer = Cursor::new(vec![0u8; 0]);
-        writer
-            .write_u32::<LittleEndian>(self.cue_point_id as u32)
-            .unwrap();
-        writer.write(&self.text).unwrap();
+        writer.write_u32::<LittleEndian>(self.cue_point_id).unwrap();
+        writer.write_all(&self.text).unwrap();
         writer.into_inner()
     }
 
@@ -82,7 +81,7 @@ impl RawLabel {
         Ok(Self {
             cue_point_id: rdr.read_u32::<LittleEndian>()?,
             text: {
-                let mut buf = vec![0u8; (length - 4) as usize];
+                let mut buf = vec![0u8; length - 4];
                 rdr.read_exact(&mut buf)?;
                 buf
             },
@@ -100,7 +99,7 @@ impl RawNote {
     fn write_to(&self) -> Vec<u8> {
         let mut writer = Cursor::new(vec![0u8; 0]);
         writer.write_u32::<LittleEndian>(self.cue_point_id).unwrap();
-        writer.write(&self.text).unwrap();
+        writer.write_all(&self.text).unwrap();
         writer.into_inner()
     }
 
@@ -111,7 +110,7 @@ impl RawNote {
         Ok(Self {
             cue_point_id: rdr.read_u32::<LittleEndian>()?,
             text: {
-                let mut buf = vec![0u8; (length - 4) as usize];
+                let mut buf = vec![0u8; length - 4];
                 rdr.read_exact(&mut buf)?;
                 buf
             },
@@ -142,7 +141,7 @@ impl RawLtxt {
         writer.write_u16::<LittleEndian>(self.dialect).unwrap();
         writer.write_u16::<LittleEndian>(self.code_page).unwrap();
         if let Some(ext_text) = &self.text {
-            writer.write(ext_text).unwrap();
+            writer.write_all(ext_text).unwrap();
         }
         writer.into_inner()
     }
@@ -161,7 +160,7 @@ impl RawLtxt {
             code_page: rdr.read_u16::<LittleEndian>()?,
             text: {
                 if length - 20 > 0 {
-                    let mut buf = vec![0u8; (length - 20) as usize];
+                    let mut buf = vec![0u8; length - 20];
                     rdr.read_exact(&mut buf)?;
                     Some(buf)
                 } else {
@@ -186,14 +185,14 @@ impl RawAdtlMember {
         // It seems like all this casing could be done with traits
         for member in members.iter() {
             let (fcc, buf) = match member {
-                RawAdtlMember::Label(l) => ((LABL_SIG, l.write_to())),
-                RawAdtlMember::Note(n) => ((NOTE_SIG, n.write_to())),
-                RawAdtlMember::LabeledText(t) => ((LTXT_SIG, t.write_to())),
+                RawAdtlMember::Label(l) => (LABL_SIG, l.write_to()),
+                RawAdtlMember::Note(n) => (NOTE_SIG, n.write_to()),
+                RawAdtlMember::LabeledText(t) => (LTXT_SIG, t.write_to()),
                 RawAdtlMember::Unrecognized(f) => (*f, vec![0u8; 0]), // <-- this is a dopey case but here for completeness
             };
             w.write_fourcc(fcc).unwrap();
             w.write_u32::<LittleEndian>(buf.len() as u32).unwrap();
-            w.write(&buf).unwrap();
+            w.write_all(&buf).unwrap();
             if buf.len() % 2 == 1 {
                 w.write_u8(0).unwrap();
             }
@@ -205,7 +204,7 @@ impl RawAdtlMember {
         writer
             .write_u32::<LittleEndian>(chunk_content.len() as u32)
             .unwrap();
-        writer.write(&chunk_content).unwrap();
+        writer.write_all(&chunk_content).unwrap();
         writer.into_inner()
     }
 
@@ -291,11 +290,7 @@ pub struct Cue {
 }
 
 fn convert_to_cue_string(buffer: &[u8]) -> String {
-    let trimmed: Vec<u8> = buffer
-        .iter()
-        .take_while(|c| **c != 0 as u8)
-        .cloned()
-        .collect();
+    let trimmed: Vec<u8> = buffer.iter().take_while(|c| **c != 0_u8).cloned().collect();
     ASCII
         .decode(&trimmed, DecoderTrap::Ignore)
         .expect("Error decoding text")
@@ -303,7 +298,7 @@ fn convert_to_cue_string(buffer: &[u8]) -> String {
 
 fn convert_from_cue_string(val: &str) -> Vec<u8> {
     ASCII
-        .encode(&val, EncoderTrap::Ignore)
+        .encode(val, EncoderTrap::Ignore)
         .expect("Error encoding text")
 }
 
@@ -324,12 +319,12 @@ impl Cue {
 
                 let raw_label = cue.label.as_ref().map(|val| RawLabel {
                     cue_point_id: n as u32,
-                    text: convert_from_cue_string(&val),
+                    text: convert_from_cue_string(val),
                 });
 
                 let raw_note = cue.note.as_ref().map(|val| RawNote {
                     cue_point_id: n as u32,
-                    text: convert_from_cue_string(&val),
+                    text: convert_from_cue_string(val),
                 });
 
                 let raw_ltxt = cue.length.map(|val| RawLtxt {
@@ -349,9 +344,15 @@ impl Cue {
                 (Vec::<RawCue>::new(), Vec::<RawAdtlMember>::new()),
                 |(mut cues, mut adtls), (cue, label, note, ltxt)| {
                     cues.push(cue);
-                    label.map(|l| adtls.push(RawAdtlMember::Label(l)));
-                    note.map(|n| adtls.push(RawAdtlMember::Note(n)));
-                    ltxt.map(|m| adtls.push(RawAdtlMember::LabeledText(m)));
+                    if let Some(l) = label {
+                        adtls.push(RawAdtlMember::Label(l))
+                    }
+                    if let Some(n) = note {
+                        adtls.push(RawAdtlMember::Note(n))
+                    }
+                    if let Some(m) = ltxt {
+                        adtls.push(RawAdtlMember::LabeledText(m))
+                    }
                     (cues, adtls)
                 },
             )
