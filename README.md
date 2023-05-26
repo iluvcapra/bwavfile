@@ -19,12 +19,12 @@ reading and creating new wave audio files.
   * Unpacked reading and writing of Integer PCM and IEEE float audio data 
     formats.
   * A unified interface for standard `WaveFormat` and extended `WaveFormatEx`
-    wave data format specification.
+    wave data format.
 
 The library has extensive metadata support, with emphasis on film and video 
 production metadata:
-  * Broadcast-Wave metdata extension, including long description, originator 
-    information, SMPTE UMID and coding history.
+  * Broadcast-Wave metadata extension, including long description, originator, 
+		SMPTE UMID and coding history.
   * Reading and writing of embedded iXML and axml/ADM metadata.
   * Reading and writing of timed cues and and timed cue regions.
   * Multichannel, surround, and ambisonic audio data description including 
