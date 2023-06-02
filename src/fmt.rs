@@ -379,6 +379,7 @@ impl WaveFmt {
 }
 
 pub trait ReadWavAudioData {
+    /// Read audio data from the receiver as interleaved [i32] samples.
     fn read_i32_frames(
         &mut self,
         format: WaveFmt,
@@ -393,14 +394,11 @@ pub trait ReadWavAudioData {
 
 impl<T> ReadWavAudioData for T
 where
-    T: std::io::Read,
+    T: std::io::Read
 {
-    /// Reade audio frames into an i32 vector
-    ///
     /// # Panics:
     /// * If the format's [valid bits per sample](WaveFmt::valid_bits_per_sample) is 
     ///   not compatible with the format's [bits per sample](WaveFmt::bits_per_sample).
-    ///   
     fn read_i32_frames(
         &mut self,
         format: WaveFmt,
