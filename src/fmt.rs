@@ -116,7 +116,8 @@ impl ChannelMask {
 /**
  * Extended Wave Format
  *
- * https://docs.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible
+ * Resources: 
+ * * [WAVEFORMATEXTENSIBLE structure](https://docs.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible)
  */
 #[derive(Debug, Copy, Clone)]
 pub struct WaveFmtExtended {
@@ -151,7 +152,7 @@ pub struct WaveFmtExtended {
 /// ### Other resources
 /// - [RFC 3261][rfc3261] (June 1998) "WAVE and AVI Codec Registries"
 /// - [Sampler Metadata](http://www.piclist.com/techref/io/serial/midi/wave.html)
-/// - [Peter Kabal, McGill University](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html)
+/// - [Audio File Format Specifications](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html) (September 2022) Prof. Peter Kabal, MMSP Lab, ECE, McGill University
 /// - [Multimedia Programming Interface and Data Specifications 1.0](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf)
 ///    (August 1991), IBM Corporation and Microsoft Corporation
 ///
@@ -162,7 +163,7 @@ pub struct WaveFmt {
     /// A tag identifying the codec in use.
     ///
     /// If this is 0xFFFE, the codec will be identified by a GUID
-    /// in `extended_format`
+    /// in [`extended_format`](WaveFmt::extended_format).
     pub tag: u16,
 
     /// Count of audio channels in each frame
@@ -198,7 +199,7 @@ pub struct WaveFmt {
 
     /// Extended format description
     ///
-    /// Additional format metadata if `channel_count` is greater than 2,
+    /// Additional format metadata if channel_count is greater than 2,
     /// or if certain codecs are used.
     pub extended_format: Option<WaveFmtExtended>,
 }
@@ -245,11 +246,11 @@ impl WaveFmt {
         }
     }
 
-    /// Create a new integer PCM format `WaveFmt` with a custom channel bitmap.
+    /// Create a new integer PCM format [WaveFmt] with a custom channel bitmap.
     ///
-    /// The order of `channels` is not important. When reading or writing
+    /// The order of [channels](WaveFmt::channels) is not important. When reading or writing
     /// audio frames you must use the standard multichannel order for Wave
-    /// files, the numerical order of the cases of `ChannelMask`.
+    /// files, the numerical order of the cases of [ChannelMask].
     pub fn new_pcm_multichannel(
         sample_rate: u32,
         bits_per_sample: u16,
@@ -300,7 +301,7 @@ impl WaveFmt {
 
     /// Format or codec of the file's audio data.
     ///
-    /// The `CommonFormat` unifies the format tag and the format extension GUID. Use this
+    /// The [CommonFormat] unifies the format tag and the format extension GUID. Use this
     /// method to determine the codec.
     pub fn common_format(&self) -> CommonFormat {
         CommonFormat::make(self.tag, self.extended_format.map(|ext| ext.type_guid))
@@ -377,7 +378,7 @@ impl WaveFmt {
     }
 }
 
-trait ReadWavAudioData {
+pub trait ReadWavAudioData {
     fn read_i32_frames(
         &mut self,
         format: WaveFmt,
@@ -394,6 +395,12 @@ impl<T> ReadWavAudioData for T
 where
     T: std::io::Read,
 {
+    /// Reade audio frames into an i32 vector
+    ///
+    /// # Panics:
+    /// * If the format's [valid bits per sample](WaveFmt::valid_bits_per_sample) is 
+    ///   not compatible with the format's [bits per sample](WaveFmt::bits_per_sample).
+    ///   
     fn read_i32_frames(
         &mut self,
         format: WaveFmt,
