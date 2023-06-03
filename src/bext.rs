@@ -92,7 +92,7 @@ impl Default for Bext {
             description: "".to_string(),
             originator: "".to_string(),
             originator_reference: "".to_string(),
-            origination_date:now.date_naive().format("%Y-%m%-d").to_string(),
+            origination_date: now.date_naive().format("%Y-%m%-d").to_string(),
             origination_time: now.time().format("%H:%M:%S").to_string(),
             time_reference: 0,
             version: 0,
@@ -104,5 +104,20 @@ impl Default for Bext {
             max_short_term_loudness: None,
             coding_history: "".to_string(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn build_default() {
+        let d = Bext::default();
+        assert_eq!(d.description, "");
+        assert_eq!(d.originator, "");
+        assert_eq!(d.originator_reference, "");
+        assert_eq!(d.version, 0);
+        assert_eq!(d.time_reference, 0);
     }
 }
