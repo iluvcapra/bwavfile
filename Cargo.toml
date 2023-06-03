@@ -1,6 +1,6 @@
 [package]
 name = "bwavfile"
-version = "2.0.1"
+version = "2.1.0"
 authors = ["Jamie Hardt <jamiehardt@me.com>", "Ian Hobson <ian.r.hobson@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -19,6 +19,7 @@ dasp_sample = "0.11.0"
 encoding = "0.2.33"
 uuid = "0.8.1"
 clap = "2.33.3"
+chrono = "0.4.26"
 
 [dev-dependencies]
 serde_json = "1.0.61"

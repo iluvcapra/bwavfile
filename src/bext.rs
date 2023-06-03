@@ -1,7 +1,9 @@
-pub type LU = f32;
 #[allow(clippy::upper_case_acronyms)]
+pub type LU = f32;
 pub type LUFS = f32;
 pub type Decibels = f32;
+
+use chrono::{Local, DateTime};
 
 ///  Broadcast-WAV metadata record.
 ///
@@ -78,4 +80,29 @@ pub struct Bext {
     // 180 bytes of nothing
     /// Coding History.
     pub coding_history: String,
+}
+
+impl Default for Bext {
+    /// Create a new version 0 `bext` with all description fields set to the empty string 
+    /// and the current local date and time filled in.
+    fn default() -> Self {
+        let now: DateTime<_> = Local::now();
+
+        Self {
+            description: "".to_string(),
+            originator: "".to_string(),
+            originator_reference: "".to_string(),
+            origination_date:now.date_naive().format("%Y-%m%-d").to_string(),
+            origination_time: now.time().format("%H:%M:%S").to_string(),
+            time_reference: 0,
+            version: 0,
+            umid: None,
+            loudness_value: None,
+            loudness_range: None,
+            max_true_peak_level: None,
+            max_momentary_loudness: None,
+            max_short_term_loudness: None,
+            coding_history: "".to_string(),
+        }
+    }
 }
