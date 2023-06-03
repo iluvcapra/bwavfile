@@ -1,8 +1,17 @@
+/// Format tags, UUIDs and utilities
+
 use uuid::Uuid;
 
+/// Format tag for integer LPCM
 pub const WAVE_TAG_PCM: u16 = 0x0001;
+
+/// Format tag for float LPCM
 pub const WAVE_TAG_FLOAT: u16 = 0x0003;
+
+/// Format tag for MPEG1
 pub const WAVE_TAG_MPEG: u16 = 0x0050;
+
+/// Format tag indicating extended format
 pub const WAVE_TAG_EXTENDED: u16 = 0xFFFE;
 
 /* RC 2361 §4:
@@ -15,34 +24,38 @@ pub const WAVE_TAG_EXTENDED: u16 = 0xFFFE;
 
 */
 
+/// Extended format UUID for integer PCM
 pub const WAVE_UUID_PCM: Uuid = Uuid::from_bytes([
     0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71,
 ]);
 
+/// Extended format UUID for float PCM
 pub const WAVE_UUID_FLOAT: Uuid = Uuid::from_bytes([
     0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71,
 ]);
 
+/// Extended format UUID for MPEG1 data
 pub const WAVE_UUID_MPEG: Uuid = Uuid::from_bytes([
     0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71,
 ]);
 
+/// Extended format for integer Ambisonic B-Format
 pub const WAVE_UUID_BFORMAT_PCM: Uuid = Uuid::from_bytes([
     0x01, 0x00, 0x00, 0x00, 0x21, 0x07, 0xd3, 0x11, 0x86, 0x44, 0xc8, 0xc1, 0xca, 0x00, 0x00, 0x00,
 ]);
 
+/// Extended format for float Ambisonic B-Format
 pub const WAVE_UUID_BFORMAT_FLOAT: Uuid = Uuid::from_bytes([
     0x03, 0x00, 0x00, 0x00, 0x21, 0x07, 0xd3, 0x11, 0x86, 0x44, 0xc8, 0xc1, 0xca, 0x00, 0x00, 0x00,
 ]);
 
+/// Generate an extended format UUID for the given basic format tag from [WaveFmt::tag].
 fn uuid_from_basic_tag(tag: u16) -> Uuid {
     let tail: [u8; 6] = [0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71];
     Uuid::from_fields_le(tag as u32, 0x0000, 0x0010, &tail).unwrap()
 }
 
 /// Sample format of the Wave file.
-///
-///
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum CommonFormat {
     /// Integer linear PCM
