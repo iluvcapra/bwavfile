@@ -16,6 +16,17 @@ jobs:
     - uses: actions/checkout@v2
     - name: Create Test Media
       run: cd tests; sh create_test_media.sh
+    - name: Install grcov
+      # You may pin to the exact commit or the version.
+      # uses: SierraSoftworks/setup-grcov@4155d44ccefd54010431dbb12bdc4044d3dad6d9
+      uses: SierraSoftworks/setup-grcov@v1.0.2
+#       with:
+#         # The version of grcov to install, or `latest` for the latest version.
+#         version: # optional, default is latest
+#         # Always use cargo to download and install grcov, bypassing the GitHub releases.
+#         use-cargo: # optional, default is false
+#         # The GitHub token which will be used to download releases (helps avoid rate limiting)
+#         github-token: 
     - name: Build
       run: cargo build --verbose
     - name: Run tests
