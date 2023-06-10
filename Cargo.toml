@@ -26,3 +26,5 @@ serde_json = "1.0.61"
 [profile.release]
 debug = true
 
+[build]
+profiler = true
