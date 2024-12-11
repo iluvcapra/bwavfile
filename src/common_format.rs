@@ -1,5 +1,4 @@
 /// Format tags, UUIDs and utilities
-
 use uuid::Uuid;
 
 /// Format tag for integer LPCM
@@ -90,7 +89,9 @@ impl CommonFormat {
             (WAVE_TAG_EXTENDED, Some(WAVE_UUID_PCM)) => Self::IntegerPCM,
             (WAVE_TAG_EXTENDED, Some(WAVE_UUID_FLOAT)) => Self::IeeeFloatPCM,
             (WAVE_TAG_EXTENDED, Some(WAVE_UUID_BFORMAT_PCM)) => Self::AmbisonicBFormatIntegerPCM,
-            (WAVE_TAG_EXTENDED, Some(WAVE_UUID_BFORMAT_FLOAT)) => Self::AmbisonicBFormatIeeeFloatPCM,
+            (WAVE_TAG_EXTENDED, Some(WAVE_UUID_BFORMAT_FLOAT)) => {
+                Self::AmbisonicBFormatIeeeFloatPCM
+            }
             (WAVE_TAG_EXTENDED, Some(x)) => CommonFormat::UnknownExtended(x),
             (x, _) => CommonFormat::UnknownBasic(x),
         }

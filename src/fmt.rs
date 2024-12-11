@@ -116,7 +116,7 @@ impl ChannelMask {
 /**
  * Extended Wave Format
  *
- * Resources: 
+ * Resources:
  * * [WAVEFORMATEXTENSIBLE structure](https://docs.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible)
  */
 #[derive(Debug, Copy, Clone)]
@@ -394,10 +394,10 @@ pub trait ReadWavAudioData {
 
 impl<T> ReadWavAudioData for T
 where
-    T: std::io::Read
+    T: std::io::Read,
 {
     /// # Panics:
-    /// * If the format's [valid bits per sample](WaveFmt::valid_bits_per_sample) is 
+    /// * If the format's [valid bits per sample](WaveFmt::valid_bits_per_sample) is
     ///   not compatible with the format's [bits per sample](WaveFmt::bits_per_sample).
     fn read_i32_frames(
         &mut self,

@@ -50,7 +50,9 @@ pub use common_format::{
 };
 pub use cue::Cue;
 pub use errors::Error;
-pub use fmt::{ADMAudioID, ChannelDescriptor, ChannelMask, WaveFmt, WaveFmtExtended, ReadWavAudioData};
+pub use fmt::{
+    ADMAudioID, ChannelDescriptor, ChannelMask, ReadWavAudioData, WaveFmt, WaveFmtExtended,
+};
 pub use sample::{Sample, I24};
 pub use wavereader::{AudioFrameReader, WaveReader};
 pub use wavewriter::{AudioFrameWriter, WaveWriter};
