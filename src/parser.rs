@@ -258,7 +258,7 @@ impl<R: Read + Seek> Parser<R> {
 
             state = State::ReadyForChunk {
                 at: at + 8 + this_displacement,
-                remaining: remaining - 8 - this_displacement,
+                remaining: remaining.saturating_sub(8 + this_displacement),
             }
         }
 
@@ -290,5 +290,37 @@ impl<R: Read + Seek> Parser<R> {
             Ok((event, state)) => (event, state),
             Err(error) => (Some(Event::Failed { error }), State::Error),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn parser_handles_missing_trailing_pad_on_final_odd_chunk() {
+        let mut buf = Vec::new();
+        buf.extend_from_slice(b"RIFF");
+        buf.extend_from_slice(&39u32.to_le_bytes());
+        buf.extend_from_slice(b"WAVE");
+        buf.extend_from_slice(b"fmt ");
+        buf.extend_from_slice(&16u32.to_le_bytes());
+        buf.extend_from_slice(&[0u8; 16]);
+        buf.extend_from_slice(b"data");
+        buf.extend_from_slice(&3u32.to_le_bytes());
+        buf.extend_from_slice(&[0xAA, 0xBB, 0xCC]);
+        assert_eq!(buf.len(), 47);
+
+        let chunks = Parser::make(Cursor::new(&buf))
+            .unwrap()
+            .into_chunk_list()
+            .expect("parser should accept a missing trailing pad on the final odd-length chunk");
+
+        assert_eq!(chunks.len(), 2);
+        assert_eq!(chunks[0].signature, FourCC::from(*b"fmt "));
+        assert_eq!(chunks[0].length, 16);
+        assert_eq!(chunks[1].signature, DATA_SIG);
+        assert_eq!(chunks[1].length, 3);
     }
 }
