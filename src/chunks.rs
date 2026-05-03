@@ -37,7 +37,7 @@ where
         self.write_u16::<LittleEndian>(format.block_alignment)?;
         self.write_u16::<LittleEndian>(format.bits_per_sample)?;
         if let Some(ext) = format.extended_format {
-            let cb_size = 24u16;
+            let cb_size = 22u16;
             self.write_u16::<LittleEndian>(cb_size)?;
             self.write_u16::<LittleEndian>(ext.valid_bits_per_sample)?;
             self.write_u32::<LittleEndian>(ext.channel_mask)?;
