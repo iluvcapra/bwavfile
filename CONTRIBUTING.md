@@ -6,8 +6,8 @@ This project is currently in a maintenance phase, new features are entertained i
 believe there is some demand for them but for the most part our current priorities 
 are:
 
-* Addressing bugs
-* Keeping the codebase modern as the Rust language evolves
+* Addressing bugs.
+* Keeping the codebase modern as the Rust language evolves.
 
 This being said, there are some features that we've been wanting for some time and 
 new contributors are welcome to take a swing at these:
@@ -60,4 +60,5 @@ Obviously we can't verify if you follow all of these rules but certain telltale
 traits of LLM-predicted text or code will raise a flag: lack of brevity in 
 descriptions or code comments, large amounts of text describing your process or 
 steps that add little to understanding the changes you've made, use of an 
-obsequious tone or being excessively accomodating.
+obsequious tone or being excessively accomodating, immediately doing requests 
+without further discussion or clarifications.
