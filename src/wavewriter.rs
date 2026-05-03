@@ -51,7 +51,7 @@ where
         let format = &self.inner.inner.format;
         let channel_count = format.channel_count as usize;
 
-        if buffer.len() % channel_count != 0 {
+        if !buffer.len().is_multiple_of(channel_count) {
             return Err(Error::InvalidBufferSize {
                 buffer_size: buffer.len(),
                 channel_count: format.channel_count,
@@ -339,7 +339,7 @@ where
         assert!(data.len() < u32::MAX as usize);
         self.inner.write_u32::<LittleEndian>(data.len() as u32)?;
         self.inner.write_all(data)?;
-        if data.len() % 2 == 0 {
+        if data.len().is_multiple_of(2) {
             self.increment_form_length(8 + data.len() as u64)?;
         } else {
             self.inner.write_u8(0)?;

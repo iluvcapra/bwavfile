@@ -110,7 +110,7 @@ impl<R: Read + Seek> AudioFrameReader<R> {
         let common_format = self.format.common_format();
         let bits_per_sample = self.format.bits_per_sample;
 
-        if buffer.len() % channel_count != 0 {
+        if !buffer.len().is_multiple_of(channel_count) {
             return Err(Error::InvalidBufferSize {
                 buffer_size: buffer.len(),
                 channel_count: self.format.channel_count,
@@ -245,7 +245,7 @@ impl<R: Read + Seek> WaveReader<R> {
     /// will return an `Err(errors::Error)` immediately if there is a structural
     /// inconsistency that makes the stream unreadable or if it's missing
     /// essential components that make interpreting the audio data impossible.
-
+    ///
     /// ```rust
     /// use std::fs::File;
     /// use std::io::{Error,ErrorKind};

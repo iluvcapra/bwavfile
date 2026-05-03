@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::common_format::{CommonFormat, WAVE_UUID_BFORMAT_PCM, WAVE_UUID_PCM};
 use crate::Sample;
 
@@ -8,7 +10,6 @@ use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 
 // Need more test cases for ADMAudioID
-#[allow(dead_code)]
 
 /// ADM Audio ID record.
 ///
@@ -154,7 +155,7 @@ pub struct WaveFmtExtended {
 /// - [Sampler Metadata](http://www.piclist.com/techref/io/serial/midi/wave.html)
 /// - [Audio File Format Specifications](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html) (September 2022) Prof. Peter Kabal, MMSP Lab, ECE, McGill University
 /// - [Multimedia Programming Interface and Data Specifications 1.0](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf)
-///    (August 1991), IBM Corporation and Microsoft Corporation
+///   (August 1991), IBM Corporation and Microsoft Corporation
 ///
 /// [rfc3261]: https://tools.ietf.org/html/rfc2361
 
@@ -404,7 +405,7 @@ where
         format: WaveFmt,
         into: &mut [i32],
     ) -> Result<usize, std::io::Error> {
-        assert!(into.len() % format.channel_count as usize == 0);
+        assert!(into.len().is_multiple_of(format.channel_count as usize));
 
         for frame in into {
             *frame = match (format.valid_bits_per_sample(), format.bits_per_sample) {
@@ -424,7 +425,7 @@ where
         format: WaveFmt,
         into: &mut [f32],
     ) -> Result<usize, std::io::Error> {
-        assert!(into.len() % format.channel_count as usize == 0);
+        assert!(into.len().is_multiple_of(format.channel_count as usize));
         todo!()
     }
 }

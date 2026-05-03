@@ -18,6 +18,7 @@ use super::fourcc::{BW64_SIG, DATA_SIG, DS64_SIG, RF64_SIG, RIFF_SIG, WAVE_SIG};
 const RF64_SIZE_MARKER: u32 = 0xFF_FF_FF_FF;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum Event {
     StartParse,
     ReadHeader {
